@@ -619,7 +619,7 @@
                     originalUrl = `https://api.beatleader.xyz/players?search=${encodeURIComponent(config.blId)}`;
                 }
                 
-                const proxiedUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalUrl)}`;
+                const proxiedUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(originalUrl)}`;
                 const res = await fetch(proxiedUrl, { headers: { 'Accept': 'application/json' } });
                 
                 if (!res.ok) throw new Error(`Network error: ${res.status}`);
