@@ -32,7 +32,6 @@
             100% { filter: hue-rotate(360deg); }
         }
 
-        /* === ОБЩИЕ КОНТЕЙНЕРЫ === */
         #app-container {
             position: absolute;
             transition: transform 0.3s ease;
@@ -59,7 +58,6 @@
             transform: scale(1);
         }
 
-        /* === PLAYING MODE (GLASS PANEL) === */
         .glass-panel {
             background: var(--bg-glass);
             backdrop-filter: blur(6px);
@@ -117,63 +115,42 @@
 
         #meta-line {
             font-size: 13px;
-            color: #999;
+            color: #d1d5db; 
             margin-top: 2px;
         }
 
         #meta-line span { margin-right: 12px; }
-        #difficulty { color: var(--neon-lime); text-shadow: 0 0 5px rgba(57, 255, 20, 0.5); }
+        #difficulty { font-weight: bold; } 
+        
+        #bsr-line {
+            margin-top: 4px;
+            display: flex;
+            gap: 15px;
+        }
 
-        /* === СТАТИСТИКА (Внутри панели) === */
+        #key, #map-date {
+            font-size: 15px; 
+            color: #d1d5db; 
+            text-shadow: 1px 1px 2px #000;
+        }
+
         #stats-row {
             display: flex;
             padding-top: 5px;
             border-top: 1px dashed rgba(255,255,255,0.1);
             margin-top: 5px;
-        }
-
-        /* === HP PROGRESS BAR === */
-        #hp-bar-wrapper {
-            position: relative;
-            width: 200px;
-            height: 18px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 4px;
-            border: 1px solid rgba(255, 0, 255, 0.4);
-            box-shadow: 0 0 8px rgba(255, 0, 255, 0.3);
-            overflow: hidden;
-            display: flex;
-        }
-        
-        #hp-bar-fill {
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, #8b0000, var(--neon-magenta));
-            transition: width 0.1s linear;
-        }
-        
-        #hp-val {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 12px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
-            pointer-events: none;
         }
 
-        /* === PROGRESS BAR === */
         #progress-wrapper {
             position: relative;
             width: 100%;
-            height: 12px;
+            height: 18px; 
             background: rgba(0,0,0,0.6);
-            border-radius: 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
             display: flex;
         }
         
@@ -189,13 +166,43 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+            pointer-events: none;
+        }
+
+        #hp-bar-wrapper {
+            position: relative;
+            width: 100%;
+            height: 12px; 
+            background: rgba(0,0,0,0.6);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 0, 255, 0.4);
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
+            display: flex;
+        }
+        
+        #hp-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #8b0000, var(--neon-magenta));
+            transition: width 0.1s linear;
+        }
+        
+        #hp-val {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             font-size: 10px;
             font-weight: bold;
             text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
             pointer-events: none;
         }
 
-        /* === НИЖНИЕ СТАТЫ (Без фона) === */
         #bottom-stats {
             display: flex;
             flex-direction: column;
@@ -217,7 +224,7 @@
 
         .stat-item .label { 
             font-size: 11px; 
-            color: #999; 
+            color: #d1d5db; 
             text-transform: uppercase;
             letter-spacing: 1px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
@@ -236,7 +243,6 @@
         .stat-item.acc-large #acc-num { font-size: 32px; color: #fff; }
         .stat-item.acc-large #acc-grade { font-size: 32px; }
 
-        /* === КОМПАКТНЫЙ BEATLEADER === */
         #bl-wrapper {
             display: flex;
             align-items: center;
@@ -280,7 +286,6 @@
             text-shadow: 0 0 5px rgba(0,255,255,0.5);
         }
 
-        /* === SETTINGS MODAL (F1) === */
         #settings-modal {
             position: fixed;
             top: 50%; left: 50%;
@@ -308,7 +313,6 @@
         }
         .setting-row input:focus { border-color: var(--neon-cyan); }
         
-        /* Сетка для Radio Button'ов (вместо Select) */
         .radio-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -368,22 +372,25 @@
                         <div id="meta-line">
                             <span id="difficulty">-</span>
                             <span id="bpm">BPM -</span>
+                        </div>
+                        <div id="bsr-line">
                             <span id="key">BSR: -</span>
+                            <span id="map-date"></span>
                         </div>
                         
                         <div id="stats-row">
-                            <div id="hp-bar-wrapper">
-                                <div id="hp-bar-fill"></div>
-                                <div id="hp-val">100%</div>
+                            <div id="progress-wrapper">
+                                <div id="progress-fill"></div>
+                                <div id="time-prog">0:00 / 0:00</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div id="progress-wrapper">
-                <div id="progress-fill"></div>
-                <div id="time-prog">0:00 / 0:00</div>
+            <div id="hp-bar-wrapper">
+                <div id="hp-bar-fill"></div>
+                <div id="hp-val">100%</div>
             </div>
 
             <div id="bottom-stats">
@@ -446,6 +453,7 @@
             diff: document.getElementById('difficulty'),
             bpm: document.getElementById('bpm'),
             key: document.getElementById('key'),
+            date: document.getElementById('map-date'),
             cover: document.getElementById('cover'),
             accNum: document.getElementById('acc-num'),
             accGrade: document.getElementById('acc-grade'),
@@ -469,6 +477,7 @@
         let debugTimeout = null;
         let duration = 0;
         let lastBlFetch = 0;
+        let blFailCount = 0; 
 
         function init() {
             loadSettings();
@@ -490,7 +499,6 @@
             document.getElementById('inp-bl').value = config.blId;
             document.getElementById('inp-show-bl').checked = config.showBL !== false;
             
-            // Устанавливаем радио-кнопку
             const radio = document.querySelector(`input[name="layout"][value="${config.layout}"]`);
             if(radio) radio.checked = true;
         }
@@ -501,7 +509,6 @@
             config.blId = document.getElementById('inp-bl').value.trim();
             config.showBL = document.getElementById('inp-show-bl').checked;
             
-            // Читаем радио-кнопку
             const checkedRadio = document.querySelector('input[name="layout"]:checked');
             if(checkedRadio) config.layout = checkedRadio.value;
             
@@ -517,7 +524,6 @@
             const isLeft = config.layout.includes('left');
             const isTop = config.layout.includes('top');
 
-            // 1. Позиция на экране и точка масштабирования
             els.app.style.transformOrigin = `${isLeft ? 'left' : 'right'} ${isTop ? 'top' : 'bottom'}`;
             els.app.style.transform = `scale(${config.scale})`;
             
@@ -526,8 +532,6 @@
             els.app.style.left = isLeft ? '20px' : 'auto';
             els.app.style.right = isLeft ? 'auto' : '20px';
 
-            // 2. ИНВЕРСИЯ ВЕРТИКАЛИ ДЛЯ BOTTOM:
-            // Если режим bottom, переворачиваем flex-поток, чтобы стеклянная панель была у края экрана
             els.playingOverlay.style.flexDirection = isTop ? 'column' : 'column-reverse';
             
             els.menuOverlay.style.top = isTop ? '0' : 'auto';
@@ -535,26 +539,23 @@
             els.playingOverlay.style.top = isTop ? '0' : 'auto';
             els.playingOverlay.style.bottom = isTop ? 'auto' : '0';
             
-            // 3. Отзеркаливание контейнеров (Left / Right)
             els.app.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             els.playingOverlay.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             
-            // 4. Отзеркаливание контента внутри карточки
             document.getElementById('header-row').style.flexDirection = isLeft ? 'row' : 'row-reverse';
             document.getElementById('text-block').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             document.getElementById('text-block').style.textAlign = isLeft ? 'left' : 'right';
             document.getElementById('stats-row').style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
             
-            // 5. Отзеркаливание нижних статов
             document.getElementById('bottom-stats').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             document.querySelector('.bottom-stat-row').style.flexDirection = isLeft ? 'row' : 'row-reverse';
             
-            // 6. Отзеркаливание плашки BeatLeader
             document.getElementById('bl-wrapper').style.flexDirection = isLeft ? 'row' : 'row-reverse';
             document.getElementById('bl-info').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             document.getElementById('bl-info').style.textAlign = isLeft ? 'left' : 'right';
 
-            // 7. Направление заполнения прогресс-баров
+            document.getElementById('bsr-line').style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
+
             els.hpFill.style.marginLeft = isLeft ? '0' : 'auto';
             els.progFill.style.marginLeft = isLeft ? '0' : 'auto';
         }
@@ -592,15 +593,33 @@
             return { grade: 'E', color: 'darkred' };
         }
 
+        function getDifficultyStyle(diff) {
+            const d = diff.toLowerCase();
+            if (d.includes('easy')) return { color: '#3cb371', shadow: 'rgba(60, 179, 113, 0.5)' }; 
+            if (d.includes('normal')) return { color: '#59b0f4', shadow: 'rgba(89, 176, 244, 0.5)' }; 
+            if (d.includes('hard')) return { color: '#ff9800', shadow: 'rgba(255, 152, 0, 0.5)' }; 
+            if (d.includes('expert+') || d.includes('expertplus')) return { color: '#8f48db', shadow: 'rgba(143, 72, 219, 0.5)' }; 
+            if (d.includes('expert')) return { color: '#e53935', shadow: 'rgba(229, 57, 53, 0.5)' }; 
+            return { color: '#fff', shadow: 'rgba(255, 255, 255, 0.5)' }; 
+        }
+
         async function fetchBSR(hash) {
             try {
                 els.key.textContent = `BSR: Loading...`;
+                els.date.textContent = ``;
                 const res = await fetch(`https://api.beatsaver.com/maps/hash/${hash}`);
                 if (!res.ok) throw new Error("Not found");
                 const data = await res.json();
                 els.key.textContent = `BSR: ${data.id}`;
+                
+                // Форматирование даты
+                if (data.uploaded) {
+                    const date = new Date(data.uploaded);
+                    els.date.textContent = date.toLocaleDateString();
+                }
             } catch (err) {
                 els.key.textContent = `BSR: N/A`;
+                els.date.textContent = ``;
             }
         }
 
@@ -609,9 +628,7 @@
             if (!force && Date.now() - lastBlFetch < 60000) return;
             
             try {
-                showDebug("Fetching BeatLeader data...");
                 const isNumeric = /^\d+$/.test(config.blId);
-                
                 let originalUrl;
                 if (isNumeric) {
                     originalUrl = `https://api.beatleader.xyz/player/${config.blId}?stats=true`;
@@ -642,9 +659,12 @@
                 }
                 
                 lastBlFetch = Date.now();
-                showDebug("BeatLeader updated ✓");
+                blFailCount = 0; 
             } catch (err) {
-                showDebug("BL Error: " + err.message);
+                blFailCount++;
+                if (blFailCount >= 5) { 
+                    showDebug(`BL Error: ${err.message} (${blFailCount} fails)`);
+                }
                 els.blName.textContent = "Error loading profile";
                 console.error("BeatLeader fetch failed:", err);
             }
@@ -678,6 +698,10 @@
                     els.artist.textContent = mapper ? `${m.artist} // ${mapper}` : m.artist;
                     
                     els.diff.textContent = `${m.characteristic} ${m.difficulty}`;
+                    const diffStyle = getDifficultyStyle(m.difficulty);
+                    els.diff.style.color = diffStyle.color;
+                    els.diff.style.textShadow = `0 0 5px ${diffStyle.shadow}`;
+                    
                     els.bpm.textContent = `BPM ${Math.round(m.BPM || 0)}`;
                     if (m.coverRaw) els.cover.src = `data:image/png;base64,${m.coverRaw}`;
                     
@@ -685,10 +709,14 @@
                     
                     if (m.BSRKey) {
                         els.key.textContent = `BSR: ${m.BSRKey}`;
+                        els.date.textContent = ``; 
+                        // Даже если ключ есть, пробуем обновить дату
+                        if (m.level_id?.startsWith('custom_level_')) fetchBSR(m.level_id.substring(13));
                     } else if (m.level_id?.startsWith('custom_level_')) {
                         fetchBSR(m.level_id.substring(13)); 
                     } else {
                         els.key.textContent = `OST/DLC`;
+                        els.date.textContent = ``;
                     }
                 }
 
