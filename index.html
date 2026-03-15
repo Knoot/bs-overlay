@@ -35,7 +35,7 @@
         #app-container {
             position: absolute;
             transition: transform 0.3s ease;
-            display: flex;
+            display: flex; /* Скрывается/показывается через JS */
             flex-direction: column;
             gap: 10px;
             width: max-content;
@@ -72,17 +72,47 @@
 
         #header-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
         }
 
+        /* === КОНТЕЙНЕРЫ ДЛЯ ИЗОБРАЖЕНИЙ === */
+        #cover-wrapper, #bl-avatar-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        #cover-wrapper { width: 90px; height: 90px; }
+        #bl-avatar-wrapper { width: 75px; height: 75px; display: none; }
+
         #cover {
-            width: 90px;
-            height: 90px;
+            width: 100%; height: 100%;
             border-radius: 10px;
             object-fit: cover;
-            border: 1px solid rgba(255,255,255,0.2);
+            display: block;
+        }
+
+        #bl-avatar {
+            width: 100%; height: 100%;
+            border-radius: 12px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-glow-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+        
+        #cover-wrapper::after { border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
+        #bl-avatar-wrapper::after { border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); }
+
+        .avatar-glow-wrapper.active-glow::after {
             box-shadow: 0 0 10px var(--neon-cyan);
+            border-color: var(--neon-cyan);
             animation: rainbow 10s linear infinite;
         }
 
@@ -134,11 +164,12 @@
             text-shadow: 1px 1px 2px #000;
         }
 
+        /* === ШИРОКИЙ PROGRESS BAR === */
         #stats-row {
             display: flex;
             padding-top: 5px;
             border-top: 1px dashed rgba(255,255,255,0.1);
-            margin-top: 5px;
+            margin-top: 2px;
             width: 100%;
         }
 
@@ -183,6 +214,7 @@
             border: 1px solid rgba(255, 0, 255, 0.4);
             box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
             display: flex;
+            flex-shrink: 0;
         }
         
         #hp-bar-fill {
@@ -249,17 +281,6 @@
             gap: 15px;
         }
         
-        #bl-avatar {
-            width: 75px;
-            height: 75px;
-            border-radius: 12px;
-            border: 2px solid rgba(255,255,255,0.2);
-            box-shadow: 0 0 10px var(--neon-cyan);
-            object-fit: cover;
-            display: none;
-            animation: rainbow 10s linear infinite;
-        }
-
         #bl-info {
             display: flex;
             flex-direction: column;
@@ -286,6 +307,7 @@
             text-shadow: 0 0 5px rgba(0,255,255,0.5);
         }
 
+        /* === МЕНЮ НАСТРОЕК === */
         #settings-modal {
             position: fixed;
             top: 50%; left: 50%;
@@ -299,14 +321,14 @@
             display: none;
             flex-direction: column;
             gap: 15px;
-            width: 320px;
+            width: 360px;
             opacity: 0;
             transition: opacity 0.2s, transform 0.2s;
         }
         #settings-modal.show { display: flex; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         #settings-modal h2 { margin: 0; color: var(--neon-cyan); text-align: center; font-size: 18px; }
         .setting-row { display: flex; flex-direction: column; gap: 5px; }
-        .setting-row.checkbox-row { flex-direction: row; align-items: center; gap: 10px; cursor: pointer; }
+        
         .setting-row input[type="text"], .setting-row input[type="number"] {
             background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #444;
             padding: 8px; font-family: 'Orbitron', sans-serif; border-radius: 4px; outline: none;
@@ -333,6 +355,26 @@
         .radio-label:hover { border-color: var(--neon-cyan); }
         .radio-label input { margin: 0; cursor: pointer; accent-color: var(--neon-cyan); }
 
+        .modules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            background: rgba(0,0,0,0.4);
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            transition: 0.2s;
+        }
+        .checkbox-row:hover { border-color: var(--neon-cyan); }
+        .checkbox-row input { margin: 0; cursor: pointer; accent-color: var(--neon-cyan); }
+
         .setting-row button {
             background: transparent; color: var(--neon-cyan); border: 1px solid var(--neon-cyan); padding: 10px;
             font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 5px;
@@ -352,7 +394,9 @@
     <div id="app-container">
         <div id="menu-overlay" class="view-mode glass-panel">
             <div id="bl-wrapper">
-                <img id="bl-avatar" src="" alt="Avatar">
+                <div id="bl-avatar-wrapper" class="avatar-glow-wrapper active-glow">
+                    <img id="bl-avatar" src="" alt="Avatar">
+                </div>
                 <div id="bl-info">
                     <div id="bl-name">Loading...</div>
                     <div class="bl-stat-compact">Global: <span id="bl-global">#--</span></div>
@@ -363,9 +407,11 @@
         </div>
 
         <div id="playing-overlay" class="view-mode">
-            <div class="glass-panel">
+            <div class="glass-panel" id="top-glass-panel">
                 <div id="header-row">
-                    <img id="cover" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" alt="Cover">
+                    <div id="cover-wrapper" class="avatar-glow-wrapper active-glow">
+                        <img id="cover" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" alt="Cover">
+                    </div>
                     <div id="text-block">
                         <div id="title">Waiting for song...</div>
                         <div id="artist-mapper">-</div>
@@ -377,13 +423,12 @@
                             <span id="key">BSR: -</span>
                             <span id="map-date"></span>
                         </div>
-                        
-                        <div id="stats-row">
-                            <div id="progress-wrapper">
-                                <div id="progress-fill"></div>
-                                <div id="time-prog">0:00 / 0:00</div>
-                            </div>
-                        </div>
+                    </div>
+                </div>
+                <div id="stats-row">
+                    <div id="progress-wrapper">
+                        <div id="progress-fill"></div>
+                        <div id="time-prog">0:00 / 0:00</div>
                     </div>
                 </div>
             </div>
@@ -408,13 +453,13 @@
     </div>
 
     <div id="settings-modal">
-        <h2>SYSTEM SETUP</h2>
+        <h2>SYSTEM SETUP [F2]</h2>
         <div class="setting-row">
-            <label>WebSocket URL</label>
+            <label style="font-size: 12px; color: #ccc;">WebSocket URL</label>
             <input type="text" id="inp-ws" placeholder="ws://127.0.0.1:2947/socket">
         </div>
         <div class="setting-row">
-            <label>Layout (Выравнивание)</label>
+            <label style="font-size: 12px; color: #ccc;">Layout (Выравнивание)</label>
             <div class="radio-grid">
                 <label class="radio-label"><input type="radio" name="layout" value="top-left"> Top Left</label>
                 <label class="radio-label"><input type="radio" name="layout" value="top-right"> Top Right</label>
@@ -423,17 +468,29 @@
             </div>
         </div>
         <div class="setting-row">
-            <label>Scale (0.5 - 2.0)</label>
+            <label style="font-size: 12px; color: #ccc;">Scale (0.5 - 2.0)</label>
             <input type="number" step="0.1" id="inp-scale">
         </div>
         <div class="setting-row">
-            <label>BeatLeader ID / Nickname</label>
+            <label style="font-size: 12px; color: #ccc;">BeatLeader ID / Nickname</label>
             <input type="text" id="inp-bl" placeholder="Например: 76561198029377687">
         </div>
-        <label class="setting-row checkbox-row">
-            <input type="checkbox" id="inp-show-bl"> 
-            Показывать BeatLeader в меню
-        </label>
+        
+        <div class="setting-row">
+            <label style="font-size: 12px; color: #ccc; margin-top: 5px;">Модули отображения (Вкл/Выкл)</label>
+            <div class="modules-grid">
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-bl"> BeatLeader Меню</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-cover"> Обложка трека</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-songinfo"> Инфо трека (Текст)</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-progress"> Прогресс-бар</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-hp"> HP Бар (Здоровье)</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-stats"> Miss / Combo</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-acc"> Точность (Acc)</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-glow-avatar"> Неоновое свечение</label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-show-debug"> Debug сообщения</label>
+            </div>
+        </div>
+        
         <div class="setting-row">
             <button onclick="saveSettings()">APPLY & RECONNECT</button>
         </div>
@@ -446,6 +503,10 @@
             app: document.getElementById('app-container'),
             menuOverlay: document.getElementById('menu-overlay'),
             playingOverlay: document.getElementById('playing-overlay'),
+            topGlassPanel: document.getElementById('top-glass-panel'),
+            headerRow: document.getElementById('header-row'),
+            textBlock: document.getElementById('text-block'),
+            statsRow: document.getElementById('stats-row'),
             progFill: document.getElementById('progress-fill'),
             time: document.getElementById('time-prog'),
             title: document.getElementById('title'),
@@ -454,15 +515,21 @@
             bpm: document.getElementById('bpm'),
             key: document.getElementById('key'),
             date: document.getElementById('map-date'),
+            coverWrapper: document.getElementById('cover-wrapper'),
             cover: document.getElementById('cover'),
+            bottomStats: document.getElementById('bottom-stats'),
+            bottomStatRow: document.querySelector('.bottom-stat-row'),
+            accLarge: document.querySelector('.acc-large'),
             accNum: document.getElementById('acc-num'),
             accGrade: document.getElementById('acc-grade'),
             combo: document.getElementById('combo-val'),
             miss: document.getElementById('miss-val'),
+            hpBarWrapper: document.getElementById('hp-bar-wrapper'),
             hpVal: document.getElementById('hp-val'),
             hpFill: document.getElementById('hp-bar-fill'),
             debug: document.getElementById('debug'),
             settings: document.getElementById('settings-modal'),
+            blAvatarWrapper: document.getElementById('bl-avatar-wrapper'),
             blAvatar: document.getElementById('bl-avatar'),
             blName: document.getElementById('bl-name'),
             blGlobal: document.getElementById('bl-global'),
@@ -470,7 +537,23 @@
             blPp: document.getElementById('bl-pp')
         };
 
-        let config = { ws: 'ws://127.0.0.1:2947/socket', layout: 'top-left', scale: 1.0, blId: '', showBL: true };
+        let config = { 
+            ws: 'ws://127.0.0.1:2947/socket', 
+            layout: 'top-left', 
+            scale: 1.0, 
+            blId: '', 
+            showBL: true, 
+            showDebugUI: true, 
+            glowAvatar: true,
+            // Новые модули
+            showCover: true,
+            showSongInfo: true,
+            showProgress: true,
+            showHp: true,
+            showStats: true,
+            showAcc: true
+        };
+        
         let ws = null;
         let reconnectAttempts = 0;
         let reconnectTimeout = null;
@@ -480,13 +563,16 @@
         let blFailCount = 0; 
 
         function init() {
+            els.app.style.display = 'none';
+
             loadSettings();
             applyLayout();
+            applyModules();
+            applyGlow();
             connectWS();
-            setMode('menu');
             
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'F1') els.settings.classList.toggle('show');
+                if (e.key === 'F2') els.settings.classList.toggle('show');
             });
         }
 
@@ -497,7 +583,18 @@
             document.getElementById('inp-ws').value = config.ws;
             document.getElementById('inp-scale').value = config.scale;
             document.getElementById('inp-bl').value = config.blId;
+            
             document.getElementById('inp-show-bl').checked = config.showBL !== false;
+            document.getElementById('inp-show-debug').checked = config.showDebugUI !== false;
+            document.getElementById('inp-glow-avatar').checked = config.glowAvatar !== false;
+            
+            // Новые чекбоксы модулей
+            document.getElementById('inp-show-cover').checked = config.showCover !== false;
+            document.getElementById('inp-show-songinfo').checked = config.showSongInfo !== false;
+            document.getElementById('inp-show-progress').checked = config.showProgress !== false;
+            document.getElementById('inp-show-hp').checked = config.showHp !== false;
+            document.getElementById('inp-show-stats').checked = config.showStats !== false;
+            document.getElementById('inp-show-acc').checked = config.showAcc !== false;
             
             const radio = document.querySelector(`input[name="layout"][value="${config.layout}"]`);
             if(radio) radio.checked = true;
@@ -507,7 +604,18 @@
             config.ws = document.getElementById('inp-ws').value;
             config.scale = parseFloat(document.getElementById('inp-scale').value) || 1.0;
             config.blId = document.getElementById('inp-bl').value.trim();
+            
             config.showBL = document.getElementById('inp-show-bl').checked;
+            config.showDebugUI = document.getElementById('inp-show-debug').checked;
+            config.glowAvatar = document.getElementById('inp-glow-avatar').checked;
+            
+            // Сохраняем состояние модулей
+            config.showCover = document.getElementById('inp-show-cover').checked;
+            config.showSongInfo = document.getElementById('inp-show-songinfo').checked;
+            config.showProgress = document.getElementById('inp-show-progress').checked;
+            config.showHp = document.getElementById('inp-show-hp').checked;
+            config.showStats = document.getElementById('inp-show-stats').checked;
+            config.showAcc = document.getElementById('inp-show-acc').checked;
             
             const checkedRadio = document.querySelector('input[name="layout"]:checked');
             if(checkedRadio) config.layout = checkedRadio.value;
@@ -516,8 +624,9 @@
             els.settings.classList.remove('show');
             
             applyLayout();
+            applyModules();
+            applyGlow();
             connectWS();
-            setMode('menu'); 
         }
 
         function applyLayout() {
@@ -542,13 +651,14 @@
             els.app.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             els.playingOverlay.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             
-            document.getElementById('header-row').style.flexDirection = isLeft ? 'row' : 'row-reverse';
-            document.getElementById('text-block').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-            document.getElementById('text-block').style.textAlign = isLeft ? 'left' : 'right';
-            document.getElementById('stats-row').style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
+            els.headerRow.style.flexDirection = isLeft ? 'row' : 'row-reverse';
+            els.textBlock.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
+            els.textBlock.style.textAlign = isLeft ? 'left' : 'right';
             
-            document.getElementById('bottom-stats').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-            document.querySelector('.bottom-stat-row').style.flexDirection = isLeft ? 'row' : 'row-reverse';
+            els.statsRow.style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
+            
+            els.bottomStats.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
+            els.bottomStatRow.style.flexDirection = isLeft ? 'row' : 'row-reverse';
             
             document.getElementById('bl-wrapper').style.flexDirection = isLeft ? 'row' : 'row-reverse';
             document.getElementById('bl-info').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
@@ -560,11 +670,46 @@
             els.progFill.style.marginLeft = isLeft ? '0' : 'auto';
         }
 
+        function applyModules() {
+            // Управление отображением обложки и текста
+            els.coverWrapper.style.display = config.showCover ? 'flex' : 'none';
+            els.textBlock.style.display = config.showSongInfo ? 'flex' : 'none';
+            
+            // Если и обложка и текст выключены - скрываем весь верхний ряд
+            const showHeader = config.showCover || config.showSongInfo;
+            els.headerRow.style.display = showHeader ? 'flex' : 'none';
+            
+            // Прогресс бар
+            els.statsRow.style.display = config.showProgress ? 'flex' : 'none';
+            
+            // Если выключено вообще всё внутри стеклянной панели - скрываем саму панель
+            const showTopPanel = showHeader || config.showProgress;
+            els.topGlassPanel.style.display = showTopPanel ? 'flex' : 'none';
+
+            // HP Бар
+            els.hpBarWrapper.style.display = config.showHp ? 'flex' : 'none';
+            
+            // Статистика внизу (Мисс/Комбо и Точность)
+            els.bottomStatRow.style.display = config.showStats ? 'flex' : 'none';
+            els.accLarge.style.display = config.showAcc ? 'flex' : 'none';
+            
+            // Если выключены обе нижние статистики - скрываем их общий контейнер
+            const showBottomStats = config.showStats || config.showAcc;
+            els.bottomStats.style.display = showBottomStats ? 'flex' : 'none';
+        }
+
+        function applyGlow() {
+            if(els.blAvatarWrapper) els.blAvatarWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+            if(els.coverWrapper) els.coverWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+        }
+
         function showDebug(msg) {
+            console.log("[BS+ Overlay]", msg);
+            if (config.showDebugUI === false) return; 
+            
             clearTimeout(debugTimeout);
             els.debug.textContent = msg;
             els.debug.style.opacity = 1;
-            console.log("[BS+ Overlay]", msg);
             debugTimeout = setTimeout(() => els.debug.style.opacity = 0, 5000);
         }
 
@@ -584,13 +729,22 @@
         }
 
         function getGrade(acc) {
-            if (acc >= 0.9) return { grade: 'SS', color: 'var(--neon-cyan)' };
-            if (acc >= 0.8) return { grade: 'S', color: '#fff' };
-            if (acc >= 0.65) return { grade: 'A', color: 'var(--neon-lime)' };
-            if (acc >= 0.5) return { grade: 'B', color: '#ffeb3b' };
-            if (acc >= 0.35) return { grade: 'C', color: '#ff9800' };
-            if (acc >= 0.2) return { grade: 'D', color: 'var(--neon-red)' };
-            return { grade: 'E', color: 'darkred' };
+            let grade = 'E';
+            if (acc >= 0.9) grade = 'SS';
+            else if (acc >= 0.8) grade = 'S';
+            else if (acc >= 0.65) grade = 'A';
+            else if (acc >= 0.5) grade = 'B';
+            else if (acc >= 0.35) grade = 'C';
+            else if (acc >= 0.2) grade = 'D';
+
+            let color = '#e0e0e0'; 
+            if (acc >= 0.95) color = '#b046ff';      
+            else if (acc >= 0.90) color = '#ff3b3b'; 
+            else if (acc >= 0.85) color = '#ff9800'; 
+            else if (acc >= 0.80) color = '#00e5ff'; 
+            else if (acc >= 0.70) color = '#39ff14'; 
+            
+            return { grade, color };
         }
 
         function getDifficultyStyle(diff) {
@@ -612,7 +766,6 @@
                 const data = await res.json();
                 els.key.textContent = `BSR: ${data.id}`;
                 
-                // Форматирование даты
                 if (data.uploaded) {
                     const date = new Date(data.uploaded);
                     els.date.textContent = date.toLocaleDateString();
@@ -625,7 +778,7 @@
 
         async function fetchBL(force = false) {
             if (!config.blId || !config.showBL) return;
-            if (!force && Date.now() - lastBlFetch < 60000) return;
+            if (!force && Date.now() - lastBlFetch < 900000) return;
             
             try {
                 const isNumeric = /^\d+$/.test(config.blId);
@@ -653,9 +806,9 @@
                 
                 if (player.avatar) {
                     els.blAvatar.src = player.avatar;
-                    els.blAvatar.style.display = 'block';
+                    els.blAvatarWrapper.style.display = 'block'; 
                 } else {
-                    els.blAvatar.style.display = 'none';
+                    els.blAvatarWrapper.style.display = 'none';
                 }
                 
                 lastBlFetch = Date.now();
@@ -673,11 +826,17 @@
         function connectWS() {
             if (ws) { ws.onclose = null; ws.close(); }
             clearTimeout(reconnectTimeout);
+            els.app.style.display = 'none'; 
             
             showDebug(`Connecting to ${config.ws}...`);
             try { ws = new WebSocket(config.ws); } catch (e) { handleDisconnect(); return; }
 
-            ws.onopen = () => { showDebug('✅ WebSocket Connected'); reconnectAttempts = 0; };
+            ws.onopen = () => { 
+                showDebug('✅ WebSocket Connected'); 
+                reconnectAttempts = 0; 
+                els.app.style.display = 'flex'; 
+                setMode('menu'); 
+            };
             ws.onclose = () => handleDisconnect();
             ws.onerror = () => handleDisconnect();
 
@@ -710,7 +869,6 @@
                     if (m.BSRKey) {
                         els.key.textContent = `BSR: ${m.BSRKey}`;
                         els.date.textContent = ``; 
-                        // Даже если ключ есть, пробуем обновить дату
                         if (m.level_id?.startsWith('custom_level_')) fetchBSR(m.level_id.substring(13));
                     } else if (m.level_id?.startsWith('custom_level_')) {
                         fetchBSR(m.level_id.substring(13)); 
@@ -756,13 +914,14 @@
         }
 
         function handleDisconnect() {
+            els.app.style.display = 'none'; 
             if (reconnectAttempts < 10) {
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
                 showDebug(`❌ WS Lost. Reconnecting in ${delay/1000}s...`);
                 reconnectAttempts++;
                 reconnectTimeout = setTimeout(connectWS, delay);
             } else {
-                showDebug(`❌ Max reconnects reached. F1 to reconfigure.`);
+                showDebug(`❌ Max reconnects reached. F2 to reconfigure.`);
             }
         }
 
