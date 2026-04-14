@@ -13,6 +13,7 @@
             --neon-red: #ff3b3b;
             --bg-glass: rgba(10, 10, 15, 0.65);
             --border-glow: 0 0 10px rgba(0, 255, 255, 0.3);
+            --soft-text-outline: -1px -1px 0 rgba(0,0,0,0.65), 1px -1px 0 rgba(0,0,0,0.65), -1px 1px 0 rgba(0,0,0,0.65), 1px 1px 0 rgba(0,0,0,0.65), 0 1px 2px rgba(0,0,0,0.55);
         }
 
         body {
@@ -68,6 +69,13 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .panel-no-bg {
+            background: transparent !important;
+            backdrop-filter: none !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
         }
 
         #header-row {
@@ -137,20 +145,61 @@
 
         #artist-mapper {
             font-size: 14px;
-            color: #ccc;
+            color: #fff;
             letter-spacing: 0.5px;
             white-space: normal;
             word-wrap: break-word;
+            text-shadow: var(--soft-text-outline);
         }
 
         #meta-line {
             font-size: 13px;
-            color: #d1d5db; 
+            color: #fff; 
             margin-top: 2px;
+            text-shadow: var(--soft-text-outline);
         }
 
         #meta-line span { margin-right: 12px; }
-        #difficulty { font-weight: bold; } 
+        #difficulty {
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            vertical-align: middle;
+        }
+
+        .difficulty-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 22px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--diff-color, rgba(255,255,255,0.16));
+            color: #fff;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 1px 2px rgba(0,0,0,0.35);
+            text-shadow: var(--soft-text-outline);
+        }
+
+        .difficulty-badge.icon-only {
+            min-width: 22px;
+            padding: 2px 7px;
+        }
+
+        .difficulty-char-icon {
+            width: 14px;
+            height: 14px;
+            display: block;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .difficulty-badge .difficulty-text {
+            display: inline-block;
+            line-height: 1;
+        }
         
         #bsr-line {
             margin-top: 4px;
@@ -160,8 +209,8 @@
 
         #key, #map-date {
             font-size: 15px; 
-            color: #d1d5db; 
-            text-shadow: 1px 1px 2px #000;
+            color: #fff; 
+            text-shadow: var(--soft-text-outline);
         }
 
         /* === ШИРОКИЙ PROGRESS BAR === */
@@ -176,6 +225,7 @@
         #progress-wrapper {
             position: relative;
             width: 100%;
+            min-width: 320px;
             height: 18px; 
             background: rgba(0,0,0,0.6);
             border-radius: 4px;
@@ -268,7 +318,7 @@
             text-shadow: 1px 1px 3px #000;
         }
 
-        #combo-val { color: var(--neon-cyan); text-shadow: 0 0 8px rgba(0, 255, 255, 0.6), 1px 1px 2px #000; }
+        #combo-val { color: var(--neon-cyan); text-shadow: 0 0 6px rgba(0, 255, 255, 0.45), -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45); }
         #miss-val { color: var(--neon-red); text-shadow: 0 0 8px rgba(255, 59, 59, 0.6), 1px 1px 2px #000; }
 
         .stat-item.acc-large .label { font-size: 14px; }
@@ -500,6 +550,8 @@
                 <label class="checkbox-row"><input type="checkbox" id="inp-show-acc"> <span data-i18n="modAcc">Accuracy (Acc)</span></label>
                 <label class="checkbox-row"><input type="checkbox" id="inp-glow-avatar"> <span data-i18n="modGlow">Neon Glow</span></label>
                 <label class="checkbox-row"><input type="checkbox" id="inp-show-debug"> <span data-i18n="modDebug">Debug Msgs</span></label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-map-bg"> <span data-i18n="modMapBg">Map Card Background</span></label>
+                <label class="checkbox-row"><input type="checkbox" id="inp-bl-bg"> <span data-i18n="modBlBg">BeatLeader Background</span></label>
             </div>
         </div>
         
@@ -511,7 +563,10 @@
     <div id="debug">System init...</div>
 
     <script>
+
         // === TRANSLATIONS / ЛОКАЛИЗАЦИЯ ===
+        const PLACEHOLDER_COVER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
         const i18n = {
             en: {
                 sysSetup: "SYSTEM SETUP [F2]",
@@ -533,9 +588,13 @@
                 modAcc: "Accuracy (Acc)",
                 modGlow: "Neon Glow",
                 modDebug: "Debug Messages",
+                modMapBg: "Map Card Background",
+                modBlBg: "BeatLeader Background",
                 applyBtn: "APPLY & RECONNECT",
                 waitingSong: "Waiting for song...",
-                loading: "Loading..."
+                loading: "Loading...",
+                profileNotFound: "Profile not found",
+                profileLoadError: "Error loading profile"
             },
             ru: {
                 sysSetup: "СИСТЕМНЫЕ НАСТРОЙКИ [F2]",
@@ -557,9 +616,13 @@
                 modAcc: "Точность (Acc)",
                 modGlow: "Неоновое свечение",
                 modDebug: "Сообщения отладки",
+                modMapBg: "Фон карточки карты",
+                modBlBg: "Фон BeatLeader",
                 applyBtn: "ПРИМЕНИТЬ И ПЕРЕПОДКЛЮЧИТЬ",
                 waitingSong: "Ожидание трека...",
-                loading: "Загрузка..."
+                loading: "Загрузка...",
+                profileNotFound: "Профиль не найден",
+                profileLoadError: "Ошибка загрузки профиля"
             }
         };
 
@@ -603,14 +666,16 @@
             blPp: document.getElementById('bl-pp')
         };
 
-        let config = { 
-            lang: 'ru', // Язык по умолчанию
-            ws: 'ws://127.0.0.1:2947/socket', 
-            layout: 'top-left', 
-            scale: 1.0, 
-            blId: '', 
-            showBL: true, 
-            showDebugUI: true, 
+        let config = {
+            lang: 'ru',
+            ws: 'ws://127.0.0.1:2947/socket',
+            layout: 'top-left',
+            scale: 1.0,
+            blId: '',
+            resolvedBlId: '',
+            resolvedBlQuery: '',
+            showBL: true,
+            showDebugUI: true,
             glowAvatar: true,
             showCover: true,
             showTitle: true,
@@ -620,65 +685,203 @@
             showProgress: true,
             showHp: true,
             showStats: true,
-            showAcc: true
+            showAcc: true,
+            showMapBg: true,
+            showBLBg: true
         };
-        
+
         let ws = null;
         let reconnectAttempts = 0;
         let reconnectTimeout = null;
+        let reconnectScheduled = false;
         let debugTimeout = null;
         let duration = 0;
-        
+        let isGamePlaying = false;
+        let lastKnownSongTime = 0;
+        let visualSongTime = 0;
+        let lastTimeAnchorMs = 0;
+        let mapTimeMultiplier = 1;
+        let progressRafId = null;
+
         let lastBlFetch = 0;
         let isFetchingBL = false;
-        let currentProxyIdx = 0; 
-        
+        let currentProxyIdx = 0;
+
         const proxies = [
-            "", 
+            "",
             "https://api.codetabs.com/v1/proxy?quest=",
             "https://api.allorigins.win/raw?url=",
             "https://corsproxy.io/?",
             "https://thingproxy.freeboard.io/fetch/"
         ];
 
-        function applyLanguage() {
-            const t = i18n[config.lang];
-            
-            // Проверяем, стоят ли сейчас плейсхолдеры, или уже загружены реальные данные
-            const isDefaultTitle = els.title.textContent === i18n.en.waitingSong || els.title.textContent === i18n.ru.waitingSong || els.title.textContent === "Waiting for song...";
-            const isDefaultLoading = els.blName.textContent === i18n.en.loading || els.blName.textContent === i18n.ru.loading || els.blName.textContent === "Loading...";
+        function getText(key) {
+            return (i18n[config.lang] && i18n[config.lang][key]) || (i18n.en && i18n.en[key]) || key;
+        }
 
-            // Замена текстов во всех элементах с data-i18n
+        function persistConfig() {
+            try {
+                localStorage.setItem('bsCyberConfig', JSON.stringify(config));
+            } catch (err) {
+                console.warn('[BS+ Overlay] Failed to persist config:', err);
+            }
+        }
+
+        function clampScale(value) {
+            if (!Number.isFinite(value)) return 1.0;
+            return Math.min(2.0, Math.max(0.5, value));
+        }
+
+        function resetBLDisplay(messageKey = 'loading') {
+            els.blName.textContent = getText(messageKey);
+            els.blGlobal.textContent = '#--';
+            els.blLocal.textContent = '#--';
+            els.blPp.textContent = '-- pp';
+            els.blAvatar.src = '';
+            els.blAvatarWrapper.style.display = 'none';
+        }
+
+        function renderBLPlayer(player) {
+            els.blName.textContent = player.name || 'Unknown';
+            els.blGlobal.textContent = player.rank ? `#${player.rank.toLocaleString()}` : '#--';
+            els.blLocal.textContent = player.countryRank ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})` : '#-- (N/A)';
+            els.blPp.textContent = player.pp ? `${Math.round(player.pp).toLocaleString()} pp` : '-- pp';
+
+            if (player.avatar) {
+                els.blAvatar.src = player.avatar;
+                els.blAvatarWrapper.style.display = 'block';
+            } else {
+                els.blAvatar.src = '';
+                els.blAvatarWrapper.style.display = 'none';
+            }
+        }
+
+        function normalizeName(value) {
+            return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        }
+
+        function normalizeLoose(value) {
+            return normalizeName(value).replace(/[_\-\s]+/g, '');
+        }
+
+        function scorePlayerMatch(player, query) {
+            const name = String(player?.name || '');
+            if (!name) return Number.NEGATIVE_INFINITY;
+
+            const qExact = normalizeName(query);
+            const qLoose = normalizeLoose(query);
+            const nExact = normalizeName(name);
+            const nLoose = normalizeLoose(name);
+
+            let score = 0;
+
+            if (nExact === qExact) score += 1000;
+            if (nLoose === qLoose) score += 950;
+            if (nExact.startsWith(qExact)) score += 700;
+            if (nLoose.startsWith(qLoose)) score += 650;
+            if (nExact.includes(qExact)) score += 450;
+            if (nLoose.includes(qLoose)) score += 400;
+
+            if (typeof player.pp === 'number') score += Math.min(player.pp / 100, 50);
+            if (typeof player.rank === 'number' && player.rank > 0) score += Math.max(0, 50 - Math.min(player.rank, 5000) / 100);
+            if (typeof player.countryRank === 'number' && player.countryRank > 0) score += Math.max(0, 10 - Math.min(player.countryRank, 1000) / 100);
+
+            return score;
+        }
+
+        function resolveBestPlayer(players, query) {
+            if (!Array.isArray(players) || players.length === 0) return null;
+
+            const ranked = players
+                .map(player => ({ player, score: scorePlayerMatch(player, query) }))
+                .sort((a, b) => b.score - a.score);
+
+            return {
+                best: ranked[0]?.player || null,
+                ranked
+            };
+        }
+
+        function buildTargetUrl(originalUrl, proxy) {
+            return proxy ? proxy + encodeURIComponent(originalUrl) : originalUrl;
+        }
+
+        async function fetchJSONWithProxyFallback(originalUrl, label = 'Request') {
+            const totalAttempts = proxies.length;
+            let lastError = null;
+
+            for (let offset = 0; offset < totalAttempts; offset++) {
+                const idx = (currentProxyIdx + offset) % totalAttempts;
+                const proxy = proxies[idx];
+                const targetUrl = buildTargetUrl(originalUrl, proxy);
+
+                try {
+                    showDebug(`${label} [${offset + 1}/${totalAttempts}] via ${proxy ? 'Proxy' : 'Direct'}`);
+
+                    const res = await fetch(targetUrl, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`Network error: ${res.status}`);
+                    }
+
+                    const json = await res.json();
+                    currentProxyIdx = idx;
+                    return json;
+                } catch (err) {
+                    lastError = err;
+                    showDebug(`${label} failed: ${err.message}`);
+
+                    if (offset < totalAttempts - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1200));
+                    }
+                }
+            }
+
+            throw lastError || new Error('Request failed');
+        }
+
+        function applyLanguage() {
+            const t = i18n[config.lang] || i18n.en;
+
+            const isDefaultTitle =
+                els.title.textContent === i18n.en.waitingSong ||
+                els.title.textContent === i18n.ru.waitingSong ||
+                els.title.textContent === "Waiting for song...";
+
+            const isDefaultLoading =
+                els.blName.textContent === i18n.en.loading ||
+                els.blName.textContent === i18n.ru.loading ||
+                els.blName.textContent === "Loading...";
+
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (t[key]) {
-                    // Пропускаем динамические поля, если в них уже есть данные игрока или трека
                     if (el.id === 'title' && !isDefaultTitle) return;
                     if (el.id === 'bl-name' && !isDefaultLoading) return;
-                    
                     el.textContent = t[key];
                 }
             });
 
-            // Плейсхолдеры
             document.getElementById('inp-bl').placeholder = t.blPlaceholder;
-
-            // Динамический HTML атрибут
             document.documentElement.lang = config.lang;
         }
 
         function init() {
             els.app.style.display = 'none';
+            els.cover.src = PLACEHOLDER_COVER;
 
             loadSettings();
             applyLanguage();
             applyLayout();
             applyModules();
             applyGlow();
+            applyPanelBackgrounds();
             connectWS();
-            
+
             setInterval(() => fetchBL(), 900000);
-            
+
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'F2') els.settings.classList.toggle('show');
             });
@@ -686,70 +889,92 @@
 
         function loadSettings() {
             const saved = localStorage.getItem('bsCyberConfig');
-            if (saved) config = { ...config, ...JSON.parse(saved) };
-            
+            if (saved) {
+                try {
+                    config = { ...config, ...JSON.parse(saved) };
+                } catch (err) {
+                    console.warn('[BS+ Overlay] Invalid saved config. Resetting localStorage config.', err);
+                    localStorage.removeItem('bsCyberConfig');
+                }
+            }
+
+            config.scale = clampScale(parseFloat(config.scale));
+
             document.getElementById('inp-ws').value = config.ws;
             document.getElementById('inp-scale').value = config.scale;
             document.getElementById('inp-bl').value = config.blId;
-            
+
             document.getElementById('inp-show-bl').checked = config.showBL !== false;
             document.getElementById('inp-show-debug').checked = config.showDebugUI !== false;
             document.getElementById('inp-glow-avatar').checked = config.glowAvatar !== false;
-            
+
             document.getElementById('inp-show-cover').checked = config.showCover !== false;
             document.getElementById('inp-show-title').checked = config.showTitle !== false;
             document.getElementById('inp-show-artist').checked = config.showArtist !== false;
             document.getElementById('inp-show-meta').checked = config.showMeta !== false;
             document.getElementById('inp-show-bsr').checked = config.showBsr !== false;
-            
+
             document.getElementById('inp-show-progress').checked = config.showProgress !== false;
             document.getElementById('inp-show-hp').checked = config.showHp !== false;
             document.getElementById('inp-show-stats').checked = config.showStats !== false;
             document.getElementById('inp-show-acc').checked = config.showAcc !== false;
-            
+            document.getElementById('inp-map-bg').checked = config.showMapBg !== false;
+            document.getElementById('inp-bl-bg').checked = config.showBLBg !== false;
+
             const layoutRadio = document.querySelector(`input[name="layout"][value="${config.layout}"]`);
-            if(layoutRadio) layoutRadio.checked = true;
+            if (layoutRadio) layoutRadio.checked = true;
 
             const langRadio = document.querySelector(`input[name="lang"][value="${config.lang}"]`);
-            if(langRadio) langRadio.checked = true;
+            if (langRadio) langRadio.checked = true;
         }
 
         function saveSettings() {
-            config.ws = document.getElementById('inp-ws').value;
-            config.scale = parseFloat(document.getElementById('inp-scale').value) || 1.0;
+            const prevBlId = config.blId;
+
+            config.ws = document.getElementById('inp-ws').value.trim() || 'ws://127.0.0.1:2947/socket';
+            config.scale = clampScale(parseFloat(document.getElementById('inp-scale').value));
             config.blId = document.getElementById('inp-bl').value.trim();
-            
+
             config.showBL = document.getElementById('inp-show-bl').checked;
             config.showDebugUI = document.getElementById('inp-show-debug').checked;
             config.glowAvatar = document.getElementById('inp-glow-avatar').checked;
-            
+
             config.showCover = document.getElementById('inp-show-cover').checked;
             config.showTitle = document.getElementById('inp-show-title').checked;
             config.showArtist = document.getElementById('inp-show-artist').checked;
             config.showMeta = document.getElementById('inp-show-meta').checked;
             config.showBsr = document.getElementById('inp-show-bsr').checked;
-            
+
             config.showProgress = document.getElementById('inp-show-progress').checked;
             config.showHp = document.getElementById('inp-show-hp').checked;
             config.showStats = document.getElementById('inp-show-stats').checked;
             config.showAcc = document.getElementById('inp-show-acc').checked;
-            
+            config.showMapBg = document.getElementById('inp-map-bg').checked;
+            config.showBLBg = document.getElementById('inp-bl-bg').checked;
+
             const checkedLayout = document.querySelector('input[name="layout"]:checked');
-            if(checkedLayout) config.layout = checkedLayout.value;
+            if (checkedLayout) config.layout = checkedLayout.value;
 
             const checkedLang = document.querySelector('input[name="lang"]:checked');
-            if(checkedLang) config.lang = checkedLang.value;
-            
-            localStorage.setItem('bsCyberConfig', JSON.stringify(config));
+            if (checkedLang) config.lang = checkedLang.value;
+
+            if (config.blId !== prevBlId) {
+                config.resolvedBlId = '';
+                config.resolvedBlQuery = '';
+                lastBlFetch = 0;
+                resetBLDisplay(config.blId ? 'loading' : 'loading');
+            }
+
+            persistConfig();
             els.settings.classList.remove('show');
-            
+
             applyLanguage();
             applyLayout();
             applyModules();
             applyGlow();
+            applyPanelBackgrounds();
             connectWS();
 
-            // ПРИНУДИТЕЛЬНО обновляем данные BeatLeader при сохранении настроек
             if (config.showBL) {
                 fetchBL(true);
             }
@@ -761,31 +986,31 @@
 
             els.app.style.transformOrigin = `${isLeft ? 'left' : 'right'} ${isTop ? 'top' : 'bottom'}`;
             els.app.style.transform = `scale(${config.scale})`;
-            
+
             els.app.style.top = isTop ? '20px' : 'auto';
             els.app.style.bottom = isTop ? 'auto' : '20px';
             els.app.style.left = isLeft ? '20px' : 'auto';
             els.app.style.right = isLeft ? 'auto' : '20px';
 
             els.playingOverlay.style.flexDirection = isTop ? 'column' : 'column-reverse';
-            
+
             els.menuOverlay.style.top = isTop ? '0' : 'auto';
             els.menuOverlay.style.bottom = isTop ? 'auto' : '0';
             els.playingOverlay.style.top = isTop ? '0' : 'auto';
             els.playingOverlay.style.bottom = isTop ? 'auto' : '0';
-            
+
             els.app.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             els.playingOverlay.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-            
+
             els.headerRow.style.flexDirection = isLeft ? 'row' : 'row-reverse';
             els.textBlock.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             els.textBlock.style.textAlign = isLeft ? 'left' : 'right';
-            
+
             els.statsRow.style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
-            
+
             els.bottomStats.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             els.bottomStatRow.style.flexDirection = isLeft ? 'row' : 'row-reverse';
-            
+
             document.getElementById('bl-wrapper').style.flexDirection = isLeft ? 'row' : 'row-reverse';
             document.getElementById('bl-info').style.alignItems = isLeft ? 'flex-start' : 'flex-end';
             document.getElementById('bl-info').style.textAlign = isLeft ? 'left' : 'right';
@@ -798,52 +1023,114 @@
 
         function applyModules() {
             els.coverWrapper.style.display = config.showCover ? 'flex' : 'none';
-            
+
             els.title.style.display = config.showTitle ? '' : 'none';
             els.artist.style.display = config.showArtist ? '' : 'none';
             els.metaLine.style.display = config.showMeta ? '' : 'none';
             els.bsrLine.style.display = config.showBsr ? '' : 'none';
-            
+
             const showAnyText = config.showTitle || config.showArtist || config.showMeta || config.showBsr;
             els.textBlock.style.display = showAnyText ? 'flex' : 'none';
-            
+
             const showHeader = config.showCover || showAnyText;
             els.headerRow.style.display = showHeader ? 'flex' : 'none';
-            
+
             els.statsRow.style.display = config.showProgress ? 'flex' : 'none';
-            
+
             const showTopPanel = showHeader || config.showProgress;
             els.topGlassPanel.style.display = showTopPanel ? 'flex' : 'none';
 
             els.hpBarWrapper.style.display = config.showHp ? 'flex' : 'none';
-            
+
             els.bottomStatRow.style.display = config.showStats ? 'flex' : 'none';
             els.accLarge.style.display = config.showAcc ? 'flex' : 'none';
-            
+
             const showBottomStats = config.showStats || config.showAcc;
             els.bottomStats.style.display = showBottomStats ? 'flex' : 'none';
         }
 
         function applyGlow() {
-            if(els.blAvatarWrapper) els.blAvatarWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
-            if(els.coverWrapper) els.coverWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+            if (els.blAvatarWrapper) els.blAvatarWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+            if (els.coverWrapper) els.coverWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+        }
+
+        function applyPanelBackgrounds() {
+            els.topGlassPanel.classList.toggle('panel-no-bg', config.showMapBg === false);
+            els.menuOverlay.classList.toggle('panel-no-bg', config.showBLBg === false);
         }
 
         function showDebug(msg) {
             console.log("[BS+ Overlay]", msg);
-            if (config.showDebugUI === false) return; 
-            
+            if (config.showDebugUI === false) return;
+
             clearTimeout(debugTimeout);
             els.debug.textContent = msg;
             els.debug.style.opacity = 1;
             debugTimeout = setTimeout(() => els.debug.style.opacity = 0, 5000);
         }
 
+        function renderProgressAt(timeSec) {
+            if (!(duration > 0)) return;
+
+            const safeTime = Math.max(0, Math.min(timeSec, duration));
+            const pct = Math.min((safeTime / duration) * 100, 100);
+            els.progFill.style.width = `${pct}%`;
+
+            const curM = Math.floor(safeTime / 60);
+            const curS = Math.floor(safeTime % 60).toString().padStart(2, '0');
+            const totM = Math.floor(duration / 60);
+            const totS = Math.floor(duration % 60).toString().padStart(2, '0');
+            els.time.textContent = `${curM}:${curS} / ${totM}:${totS}`;
+        }
+
+        function stopProgressLoop() {
+            if (progressRafId !== null) {
+                cancelAnimationFrame(progressRafId);
+                progressRafId = null;
+            }
+        }
+
+        function syncSongTime(timeSec) {
+            const safeTime = Math.max(0, Number(timeSec) || 0);
+            lastKnownSongTime = safeTime;
+            visualSongTime = safeTime;
+            lastTimeAnchorMs = performance.now();
+
+            if (duration > 0) {
+                renderProgressAt(safeTime);
+            }
+        }
+
+        function startProgressLoop() {
+            if (progressRafId !== null) return;
+
+            const tick = () => {
+                progressRafId = null;
+
+                if (!isGamePlaying || !(duration > 0)) return;
+
+                const now = performance.now();
+                const elapsedSec = Math.max(0, (now - lastTimeAnchorMs) / 1000);
+                const predictedTime = lastKnownSongTime + (elapsedSec * mapTimeMultiplier);
+                visualSongTime = predictedTime;
+                renderProgressAt(predictedTime);
+
+                progressRafId = requestAnimationFrame(tick);
+            };
+
+            progressRafId = requestAnimationFrame(tick);
+        }
+
         function setMode(mode) {
             if (mode === 'playing') {
+                isGamePlaying = true;
+                lastTimeAnchorMs = performance.now();
                 els.menuOverlay.classList.remove('active');
                 els.playingOverlay.classList.add('active');
+                startProgressLoop();
             } else {
+                isGamePlaying = false;
+                stopProgressLoop();
                 els.playingOverlay.classList.remove('active');
                 if (config.showBL) {
                     els.menuOverlay.classList.add('active');
@@ -852,6 +1139,48 @@
                     els.menuOverlay.classList.remove('active');
                 }
             }
+        }
+
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function normalizeCharacteristic(value) {
+            return String(value ?? '').toLowerCase().replace(/\s+/g, '');
+        }
+
+        function getCharacteristicIconSvg(characteristic) {
+            const normalized = normalizeCharacteristic(characteristic);
+            const icons = {
+                standard: '<svg class="difficulty-char-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13L7 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M9 7L13 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M2.4 13.6l1.3-1.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12.3 3.7l1.3-1.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M3 3l10 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M2.3 2.3l1.5 1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12.2 12.2l1.5 1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+                onesaber: '<svg class="difficulty-char-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13L13 3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M2.2 13.8l1.5-1.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M12.3 3.7l1.5-1.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+                lawless: '<svg class="difficulty-char-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.2 6.3c0-.8.6-1.5 1.4-1.5.6 0 1.1.3 1.4.8.3-.5.8-.8 1.4-.8.8 0 1.4.7 1.4 1.5 0 .5-.2.9-.6 1.2v1c0 1.9-1.6 3.5-3.6 3.5S4.8 10.4 4.8 8.5v-1c-.4-.3-.6-.7-.6-1.2Z" fill="currentColor"/><circle cx="6.5" cy="7.5" r="0.8" fill="#0b0b10"/><circle cx="9.5" cy="7.5" r="0.8" fill="#0b0b10"/><path d="M7.1 9.5 8 10.4l.9-.9" stroke="#0b0b10" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            };
+            return icons[normalized] || '';
+        }
+
+        function formatCharacteristicBadge(characteristic) {
+            const icon = getCharacteristicIconSvg(characteristic);
+            if (icon) {
+                return icon;
+            }
+            return `<span class="difficulty-text">${escapeHtml(characteristic)}</span>`;
+        }
+
+        function formatDifficultyLabel(difficulty) {
+            return String(difficulty ?? '').replace(/^ExpertPlus$/i, 'Expert+').replace(/^Expert Plus$/i, 'Expert+');
+        }
+
+        function formatDifficultyDisplay(characteristic, difficulty) {
+            const safeDifficulty = escapeHtml(formatDifficultyLabel(difficulty));
+            const characteristicPart = formatCharacteristicBadge(characteristic);
+            return `<span class="difficulty-badge" title="${escapeHtml(characteristic)} ${safeDifficulty}">${characteristicPart}<span class="difficulty-text">${safeDifficulty}</span></span>`;
         }
 
         function getGrade(acc) {
@@ -863,24 +1192,24 @@
             else if (acc >= 0.35) grade = 'C';
             else if (acc >= 0.2) grade = 'D';
 
-            let color = '#e0e0e0'; 
-            if (acc >= 0.95) color = '#b046ff';      
-            else if (acc >= 0.90) color = '#ff3b3b'; 
-            else if (acc >= 0.85) color = '#ff9800'; 
-            else if (acc >= 0.80) color = '#00e5ff'; 
-            else if (acc >= 0.70) color = '#39ff14'; 
-            
+            let color = '#e0e0e0';
+            if (acc >= 0.95) color = '#b046ff';
+            else if (acc >= 0.90) color = '#ff3b3b';
+            else if (acc >= 0.85) color = '#ff9800';
+            else if (acc >= 0.80) color = '#00e5ff';
+            else if (acc >= 0.70) color = '#39ff14';
+
             return { grade, color };
         }
 
         function getDifficultyStyle(diff) {
-            const d = diff.toLowerCase();
-            if (d.includes('easy')) return { color: '#3cb371', shadow: 'rgba(60, 179, 113, 0.5)' }; 
-            if (d.includes('normal')) return { color: '#59b0f4', shadow: 'rgba(89, 176, 244, 0.5)' }; 
-            if (d.includes('hard')) return { color: '#ff9800', shadow: 'rgba(255, 152, 0, 0.5)' }; 
-            if (d.includes('expert+') || d.includes('expertplus')) return { color: '#8f48db', shadow: 'rgba(143, 72, 219, 0.5)' }; 
-            if (d.includes('expert')) return { color: '#e53935', shadow: 'rgba(229, 57, 53, 0.5)' }; 
-            return { color: '#fff', shadow: 'rgba(255, 255, 255, 0.5)' }; 
+            const d = String(diff || '').toLowerCase();
+            if (d.includes('easy')) return { color: '#3cb371', shadow: 'rgba(60, 179, 113, 0.5)' };
+            if (d.includes('normal')) return { color: '#59b0f4', shadow: 'rgba(89, 176, 244, 0.5)' };
+            if (d.includes('hard')) return { color: '#ff9800', shadow: 'rgba(255, 152, 0, 0.5)' };
+            if (d.includes('expert+') || d.includes('expertplus')) return { color: '#8f48db', shadow: 'rgba(143, 72, 219, 0.5)' };
+            if (d.includes('expert')) return { color: '#e53935', shadow: 'rgba(229, 57, 53, 0.5)' };
+            return { color: '#fff', shadow: 'rgba(255, 255, 255, 0.5)' };
         }
 
         async function fetchBSR(hash) {
@@ -891,7 +1220,7 @@
                 if (!res.ok) throw new Error("Not found");
                 const data = await res.json();
                 els.key.textContent = `BSR: ${data.id}`;
-                
+
                 if (data.uploaded) {
                     const date = new Date(data.uploaded);
                     els.date.textContent = date.toLocaleDateString();
@@ -906,171 +1235,260 @@
             if (!config.blId || !config.showBL) return;
             if (isFetchingBL) return;
             if (!force && Date.now() - lastBlFetch < 900000) return;
-            
-            isFetchingBL = true;
-            
-            const isNumeric = /^\d+$/.test(config.blId);
-            const originalUrl = isNumeric
-                ? `https://api.beatleader.com/player/${config.blId}?stats=true`
-                : `https://api.beatleader.com/players?search=${encodeURIComponent(config.blId)}`;
-                
-            let success = false;
-            let attempts = 0;
-            const maxAttempts = 5;
 
-            while (!success && attempts < maxAttempts) {
-                try {
-                    const proxy = proxies[currentProxyIdx % proxies.length];
-                    const targetUrl = proxy ? proxy + encodeURIComponent(originalUrl) : originalUrl;
-                    
-                    showDebug(`BL Fetch [${attempts + 1}/${maxAttempts}] via ${proxy ? 'Proxy' : 'Direct'}`);
-                    
-                    const res = await fetch(targetUrl, { headers: { 'Accept': 'application/json' } });
-                    
-                    if (!res.ok) throw new Error(`Network error: ${res.status}`);
-                    
-                    const json = await res.json();
-                    const player = json.data ? json.data[0] : json;
-                    
-                    if (!player || !player.name) throw new Error("Player not found");
-                    
-                    els.blName.textContent = player.name || "Unknown";
-                    els.blGlobal.textContent = player.rank ? `#${player.rank.toLocaleString()}` : "#--";
-                    els.blLocal.textContent = player.countryRank ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})` : "#-- (N/A)";
-                    els.blPp.textContent = player.pp ? `${Math.round(player.pp).toLocaleString()}` : "--";
-                    
-                    if (player.avatar) {
-                        els.blAvatar.src = player.avatar;
-                        els.blAvatarWrapper.style.display = 'block'; 
-                    } else {
-                        els.blAvatarWrapper.style.display = 'none';
+            isFetchingBL = true;
+
+            try {
+                let player = null;
+                const isNumeric = /^\d+$/.test(config.blId);
+
+                if (isNumeric) {
+                    const json = await fetchJSONWithProxyFallback(`https://api.beatleader.com/player/${config.blId}?stats=true`, 'BL Player');
+                    player = json?.data ? json.data[0] : json;
+                    config.resolvedBlId = config.blId;
+                    config.resolvedBlQuery = config.blId;
+                } else {
+                    const normalizedQuery = normalizeName(config.blId);
+
+                    if (config.resolvedBlId && normalizeName(config.resolvedBlQuery) === normalizedQuery) {
+                        try {
+                            const json = await fetchJSONWithProxyFallback(`https://api.beatleader.com/player/${config.resolvedBlId}?stats=true`, 'BL Resolved Player');
+                            player = json?.data ? json.data[0] : json;
+                        } catch (_) {
+                            player = null;
+                        }
                     }
-                    
-                    lastBlFetch = Date.now();
-                    success = true;
-                    showDebug(`BL Profile Loaded Successfully!`);
-                } catch (err) {
-                    attempts++;
-                    currentProxyIdx++; 
-                    showDebug(`BL Error: ${err.message}. Retrying...`);
-                    
-                    if (attempts < maxAttempts) {
-                        await new Promise(r => setTimeout(r, 2000)); 
+
+                    if (!player) {
+                        const json = await fetchJSONWithProxyFallback(`https://api.beatleader.com/players?search=${encodeURIComponent(config.blId)}`, 'BL Search');
+                        const candidates = Array.isArray(json?.data) ? json.data : [];
+                        const resolved = resolveBestPlayer(candidates, config.blId);
+
+                        if (!resolved?.best) {
+                            throw new Error('Player not found');
+                        }
+
+                        player = resolved.best;
+
+                        if (player.id) {
+                            config.resolvedBlId = String(player.id);
+                            config.resolvedBlQuery = config.blId;
+                        }
+
+                        if (resolved.ranked.length > 1) {
+                            showDebug(`BL best match: ${player.name}`);
+                        }
                     }
                 }
-            }
 
-            if (!success) {
-                els.blName.textContent = "Error loading profile";
-                showDebug(`BL Fetch failed completely after ${maxAttempts} attempts.`);
+                if (!player || !player.name) {
+                    throw new Error('Player not found');
+                }
+
+                renderBLPlayer(player);
+                lastBlFetch = Date.now();
+                persistConfig();
+                showDebug(`BL Profile Loaded Successfully!`);
+            } catch (err) {
+                resetBLDisplay(err.message === 'Player not found' ? 'profileNotFound' : 'profileLoadError');
+                showDebug(`BL Error: ${err.message}`);
+            } finally {
+                isFetchingBL = false;
             }
-            
-            isFetchingBL = false;
         }
 
         function connectWS() {
-            if (ws) { ws.onclose = null; ws.close(); }
+            if (ws) {
+                try {
+                    ws.onopen = null;
+                    ws.onclose = null;
+                    ws.onerror = null;
+                    ws.onmessage = null;
+                    ws.close();
+                } catch (_) {}
+            }
+
             clearTimeout(reconnectTimeout);
-            els.app.style.display = 'none'; 
-            
+            reconnectTimeout = null;
+            reconnectScheduled = false;
+            isGamePlaying = false;
+            duration = 0;
+            mapTimeMultiplier = 1;
+            lastKnownSongTime = 0;
+            visualSongTime = 0;
+            stopProgressLoop();
+            els.app.style.display = 'none';
+
             showDebug(`Connecting to ${config.ws}...`);
-            try { ws = new WebSocket(config.ws); } catch (e) { handleDisconnect(); return; }
 
-            ws.onopen = () => { 
-                showDebug('✅ WebSocket Connected'); 
-                reconnectAttempts = 0; 
-                els.app.style.display = 'flex'; 
-                setMode('menu'); 
+            let socket;
+            try {
+                socket = new WebSocket(config.ws);
+            } catch (e) {
+                handleDisconnect(null, e);
+                return;
+            }
+
+            ws = socket;
+
+            socket.onopen = () => {
+                if (ws !== socket) return;
+                showDebug('✅ WebSocket Connected');
+                reconnectAttempts = 0;
+                reconnectScheduled = false;
+                els.app.style.display = 'flex';
+                setMode('menu');
             };
-            ws.onclose = () => handleDisconnect();
-            ws.onerror = () => handleDisconnect();
 
-            ws.onmessage = (ev) => {
-                const data = JSON.parse(ev.data);
-                const event = data._event;
+            const disconnectHandler = (evtOrErr) => {
+                handleDisconnect(socket, evtOrErr);
+            };
 
-                if (event === 'gameState') {
-                    if (data.gameStateChanged === 'Playing') setMode('playing');
-                    else setMode('menu');
+            socket.onclose = disconnectHandler;
+            socket.onerror = disconnectHandler;
+
+            socket.onmessage = (ev) => {
+                if (ws !== socket) return;
+
+                let data;
+                try {
+                    data = JSON.parse(ev.data);
+                } catch (err) {
+                    showDebug(`WS JSON parse error: ${err.message}`);
+                    return;
                 }
 
-                if (event === 'mapInfo' && data.mapInfoChanged) {
-                    const m = data.mapInfoChanged;
-                    els.title.textContent = m.sub_name ? `${m.name} ${m.sub_name}` : m.name;
-                    
-                    const mapper = (m.mapper && m.mapper !== 'Not mapped') ? m.mapper : '';
-                    els.artist.textContent = mapper ? `${m.artist} // ${mapper}` : m.artist;
-                    
-                    els.diff.textContent = `${m.characteristic} ${m.difficulty}`;
-                    const diffStyle = getDifficultyStyle(m.difficulty);
-                    els.diff.style.color = diffStyle.color;
-                    els.diff.style.textShadow = `0 0 5px ${diffStyle.shadow}`;
-                    
-                    els.bpm.textContent = `BPM ${Math.round(m.BPM || 0)}`;
-                    if (m.coverRaw) els.cover.src = `data:image/png;base64,${m.coverRaw}`;
-                    
-                    duration = (m.duration || 0) / 1000;
-                    
-                    if (m.BSRKey) {
-                        els.key.textContent = `BSR: ${m.BSRKey}`;
-                        els.date.textContent = ``; 
-                        if (m.level_id?.startsWith('custom_level_')) fetchBSR(m.level_id.substring(13));
-                    } else if (m.level_id?.startsWith('custom_level_')) {
-                        fetchBSR(m.level_id.substring(13)); 
-                    } else {
-                        els.key.textContent = `OST/DLC`;
-                        els.date.textContent = ``;
-                    }
-                }
+                try {
+                    const event = data._event;
 
-                if (event === 'score' && data.scoreEvent) {
-                    const s = data.scoreEvent;
-                    
-                    if (s.accuracy !== undefined) {
-                        const accRaw = s.accuracy;
-                        const accObj = getGrade(accRaw);
-                        els.accNum.textContent = `${(accRaw * 100).toFixed(1)}%`;
-                        els.accGrade.textContent = accObj.grade;
-                        els.accGrade.style.color = accObj.color;
-                        els.accGrade.style.textShadow = `0 0 10px ${accObj.color}, 1px 1px 3px #000`;
-                    }
-                    
-                    if (s.combo !== undefined) els.combo.textContent = s.combo;
-                    if (s.missCount !== undefined) els.miss.textContent = s.missCount;
-                    
-                    if (s.currentHealth !== undefined) {
-                        const hpPct = Math.round(s.currentHealth * 100);
-                        els.hpVal.textContent = `${hpPct}%`;
-                        els.hpFill.style.width = `${hpPct}%`;
+                    if (event === 'gameState') {
+                        if (data.gameStateChanged === 'Playing') {
+                            setMode('playing');
+                        } else {
+                            setMode('menu');
+                        }
                     }
 
-                    if (duration > 0 && s.time !== undefined) {
-                        const pct = Math.min((s.time / duration) * 100, 100);
-                        els.progFill.style.width = `${pct}%`;
+                    if (event === 'mapInfo' && data.mapInfoChanged) {
+                        const m = data.mapInfoChanged;
+                        els.title.textContent = m.sub_name ? `${m.name} ${m.sub_name}` : m.name;
 
-                        const curM = Math.floor(s.time / 60);
-                        const curS = Math.floor(s.time % 60).toString().padStart(2, '0');
-                        const totM = Math.floor(duration / 60);
-                        const totS = Math.floor(duration % 60).toString().padStart(2, '0');
-                        els.time.textContent = `${curM}:${curS} / ${totM}:${totS}`;
+                        const mapper = (m.mapper && m.mapper !== 'Not mapped') ? m.mapper : '';
+                        els.artist.textContent = mapper ? `${m.artist} // ${mapper}` : m.artist;
+
+                        const diffStyle = getDifficultyStyle(m.difficulty);
+                        els.diff.style.setProperty('--diff-color', diffStyle.color);
+                        els.diff.style.setProperty('--diff-shadow', diffStyle.shadow);
+                        els.diff.innerHTML = formatDifficultyDisplay(m.characteristic, m.difficulty);
+
+                        els.bpm.textContent = `BPM ${Math.round(m.BPM || 0)}`;
+                        if (m.coverRaw) els.cover.src = `data:image/png;base64,${m.coverRaw}`;
+                        else els.cover.src = PLACEHOLDER_COVER;
+
+                        duration = (m.duration || 0) / 1000;
+                        mapTimeMultiplier = Math.max(0, Number(m.timeMultiplier) || 1);
+                        syncSongTime(m.time !== undefined ? m.time : 0);
+                        if (!(duration > 0)) {
+                            els.time.textContent = '0:00 / 0:00';
+                        }
+
+                        if (m.BSRKey) {
+                            els.key.textContent = `BSR: ${m.BSRKey}`;
+                            els.date.textContent = ``;
+                            if (m.level_id?.startsWith('custom_level_')) fetchBSR(m.level_id.substring(13));
+                        } else if (m.level_id?.startsWith('custom_level_')) {
+                            fetchBSR(m.level_id.substring(13));
+                        } else {
+                            els.key.textContent = `OST/DLC`;
+                            els.date.textContent = ``;
+                        }
+
+                        if (isGamePlaying) {
+                            startProgressLoop();
+                        }
                     }
+
+                    if (event === 'score' && data.scoreEvent) {
+                        const s = data.scoreEvent;
+
+                        if (s.accuracy !== undefined) {
+                            const accRaw = s.accuracy;
+                            const accObj = getGrade(accRaw);
+                            els.accNum.textContent = `${(accRaw * 100).toFixed(1)}%`;
+                            els.accGrade.textContent = accObj.grade;
+                            els.accGrade.style.color = accObj.color;
+                            els.accGrade.style.textShadow = `0 0 10px ${accObj.color}, 1px 1px 3px #000`;
+                        }
+
+                        if (s.combo !== undefined) els.combo.textContent = s.combo;
+                        if (s.missCount !== undefined) els.miss.textContent = s.missCount;
+
+                        if (s.currentHealth !== undefined) {
+                            const hpPct = Math.round(s.currentHealth * 100);
+                            els.hpVal.textContent = `${hpPct}%`;
+                            els.hpFill.style.width = `${hpPct}%`;
+                        }
+
+                        if (s.time !== undefined) {
+                            syncSongTime(s.time);
+                            if (isGamePlaying) startProgressLoop();
+                        }
+                    }
+
+                    if (event === 'pause') {
+                        isGamePlaying = false;
+                        stopProgressLoop();
+                        if (data.pauseTime !== undefined) {
+                            syncSongTime(data.pauseTime);
+                        }
+                    }
+
+                    if (event === 'resume') {
+                        if (data.resumeTime !== undefined) {
+                            syncSongTime(data.resumeTime);
+                        } else {
+                            lastTimeAnchorMs = performance.now();
+                        }
+                        isGamePlaying = true;
+                        startProgressLoop();
+                    }
+                } catch (err) {
+                    showDebug(`WS handler error: ${err.message}`);
                 }
             };
         }
 
-        function handleDisconnect() {
-            els.app.style.display = 'none'; 
+        function handleDisconnect(sourceSocket, error = null) {
+            if (sourceSocket && sourceSocket !== ws) return;
+            if (reconnectScheduled) return;
+
+            reconnectScheduled = true;
+            isGamePlaying = false;
+            stopProgressLoop();
+            lastKnownSongTime = 0;
+            visualSongTime = 0;
+            lastTimeAnchorMs = 0;
+            mapTimeMultiplier = 1;
+            els.app.style.display = 'none';
+
             if (reconnectAttempts < 10) {
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                showDebug(`❌ WS Lost. Reconnecting in ${delay/1000}s...`);
+                const suffix = error && error.message ? ` (${error.message})` : '';
+                showDebug(`❌ WS Lost. Reconnecting in ${delay/1000}s...${suffix}`);
                 reconnectAttempts++;
-                reconnectTimeout = setTimeout(connectWS, delay);
+
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = setTimeout(() => {
+                    reconnectScheduled = false;
+                    connectWS();
+                }, delay);
             } else {
                 showDebug(`❌ Max reconnects reached. F2 to reconfigure.`);
             }
         }
 
         init();
+
     </script>
 </body>
 </html>
