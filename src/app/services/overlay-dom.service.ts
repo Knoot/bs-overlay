@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
-import { Lang, Layout, OverlayConfig, OverlayElements, PlayerCandidate, ViewMode } from '../models/overlay.models';
+import { Lang, OverlayConfig, OverlayElements, PlayerCandidate, ViewMode } from '../models/overlay.models';
 import { OverlayConfigService } from './overlay-config.service';
 
 @Injectable({ providedIn: 'root' })

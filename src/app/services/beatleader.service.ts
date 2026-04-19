@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import { PROXIES } from '../constants/overlay.constants';
 import { BeatleaderFetchResult, PlayerCandidate } from '../models/overlay.models';
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+type JsonObject = { [key: string]: JsonValue };
+
 @Injectable({ providedIn: 'root' })
 export class BeatleaderService {
   private currentProxyIdx = 0;
@@ -121,7 +125,7 @@ export class BeatleaderService {
     };
   }
 
-  private async fetchJSONWithProxyFallback(originalUrl: string): Promise<any> {
+  private async fetchJSONWithProxyFallback(originalUrl: string): Promise<JsonValue> {
     const totalAttempts = PROXIES.length;
     let lastError: unknown = null;
 

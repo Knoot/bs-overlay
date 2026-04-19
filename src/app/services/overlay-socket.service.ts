@@ -81,7 +81,7 @@ export class OverlaySocketService {
     this.socket = null;
   }
 
-  private scheduleReconnect(url: string, callbacks: SocketCallbacks, error?: unknown): void {
+  private scheduleReconnect(url: string, callbacks: SocketCallbacks): void {
     if (this.reconnectScheduled) {
       return;
     }
