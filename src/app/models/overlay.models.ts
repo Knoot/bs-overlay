@@ -36,6 +36,19 @@ export interface PlayerCandidate {
   avatar?: string;
 }
 
+export interface BeatleaderPlayerResponse {
+  data?: PlayerCandidate[];
+}
+
+export interface BeatleaderPlayersSearchResponse {
+  data?: PlayerCandidate[];
+}
+
+export interface BeatsaverMapByHashResponse {
+  id?: string;
+  uploaded?: string;
+}
+
 export interface ScoreEventPayload {
   accuracy?: number;
   combo?: number;

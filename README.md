@@ -131,15 +131,13 @@ docker compose -f docker-compose.yml up --build overlay
   - `npm install`
   - `npm run lint`
   - `npm test`
-  - `npm run build`
+  - `npm run build:release`
   - `docker compose -f docker-compose.yml build overlay`
 
 - `release`
   Запускается только после успешного `checks`.
   Делает:
-  - `npm run build:release`
-  - генерацию `dist/overlay/release/index.html` как одного self-contained файла
-  - upload готового `index.html` как workflow artifact
+  - использует `index.html`, собранный в `checks`
   - создание prerelease на каждый push в `dev` с тегом вида `dev-YYYYMMDD-NN`
   - создание обычного GitHub Release для tag-based запуска с приложенным `index.html`
 

@@ -23,7 +23,7 @@ export class OverlaySocketService {
     try {
       socket = new WebSocket(url);
     } catch (error) {
-      this.scheduleReconnect(url, callbacks, error);
+      this.scheduleReconnect(url, callbacks);
       callbacks.onDisconnect(error);
       return;
     }
@@ -39,7 +39,7 @@ export class OverlaySocketService {
 
     const disconnectHandler = (eventOrError: Event) => {
       if (socket !== this.socket) return;
-      this.scheduleReconnect(url, callbacks, eventOrError);
+      this.scheduleReconnect(url, callbacks);
       callbacks.onDisconnect(eventOrError);
     };
 

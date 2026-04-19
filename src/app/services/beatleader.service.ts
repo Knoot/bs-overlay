@@ -1,22 +1,24 @@
 import { Injectable } from '@angular/core';
 import { PROXIES } from '../constants/overlay.constants';
-import { BeatleaderFetchResult, PlayerCandidate } from '../models/overlay.models';
-
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
-type JsonObject = { [key: string]: JsonValue };
+import {
+  BeatleaderFetchResult,
+  BeatleaderPlayerResponse,
+  BeatleaderPlayersSearchResponse,
+  BeatsaverMapByHashResponse,
+  PlayerCandidate
+} from '../models/overlay.models';
 
 @Injectable({ providedIn: 'root' })
 export class BeatleaderService {
   private currentProxyIdx = 0;
 
-  async fetchBsr(hash: string): Promise<{ id?: string; uploaded?: string }> {
+  async fetchBsr(hash: string): Promise<BeatsaverMapByHashResponse> {
     const response = await fetch(`https://api.beatsaver.com/maps/hash/${hash}`);
     if (!response.ok) {
       throw new Error('Not found');
     }
 
-    return response.json();
+    return (await response.json()) as BeatsaverMapByHashResponse;
   }
 
   async fetchPlayer(blId: string, resolvedBlId: string, resolvedBlQuery: string): Promise<BeatleaderFetchResult> {
@@ -25,7 +27,7 @@ export class BeatleaderService {
 
     if (isNumeric) {
       const json = await this.fetchJSONWithProxyFallback(`https://api.beatleader.com/player/${blId}?stats=true`);
-      player = json?.data ? json.data[0] : json;
+      player = this.extractSinglePlayerResponse(json);
       return {
         player,
         resolvedBlId: blId,
@@ -40,7 +42,7 @@ export class BeatleaderService {
     if (resolvedBlId && this.normalizeName(resolvedBlQuery) === normalizedQuery) {
       try {
         const json = await this.fetchJSONWithProxyFallback(`https://api.beatleader.com/player/${resolvedBlId}?stats=true`);
-        player = json?.data ? json.data[0] : json;
+        player = this.extractSinglePlayerResponse(json);
       } catch {
         player = null;
       }
@@ -50,7 +52,7 @@ export class BeatleaderService {
 
     if (!player) {
       const json = await this.fetchJSONWithProxyFallback(`https://api.beatleader.com/players?search=${encodeURIComponent(blId)}`);
-      const candidates = Array.isArray(json?.data) ? (json.data as PlayerCandidate[]) : [];
+      const candidates = this.extractSearchPlayersResponse(json);
       const resolved = this.resolveBestPlayer(candidates, blId);
 
       if (!resolved?.best) {
@@ -125,7 +127,7 @@ export class BeatleaderService {
     };
   }
 
-  private async fetchJSONWithProxyFallback(originalUrl: string): Promise<JsonValue> {
+  private async fetchJSONWithProxyFallback(originalUrl: string): Promise<unknown> {
     const totalAttempts = PROXIES.length;
     let lastError: unknown = null;
 
@@ -155,5 +157,39 @@ export class BeatleaderService {
     }
 
     throw lastError || new Error('Request failed');
+  }
+
+  private extractSinglePlayerResponse(value: unknown): PlayerCandidate | null {
+    if (this.isBeatleaderPlayerResponse(value) && Array.isArray(value.data)) {
+      return this.toPlayerCandidate(value.data[0]);
+    }
+
+    return this.toPlayerCandidate(value);
+  }
+
+  private extractSearchPlayersResponse(value: unknown): PlayerCandidate[] {
+    if (!this.isBeatleaderPlayersSearchResponse(value) || !Array.isArray(value.data)) {
+      return [];
+    }
+
+    return value.data
+      .map((item) => this.toPlayerCandidate(item))
+      .filter((item): item is PlayerCandidate => item !== null);
+  }
+
+  private isBeatleaderPlayerResponse(value: unknown): value is BeatleaderPlayerResponse {
+    return this.isJsonObject(value);
+  }
+
+  private isBeatleaderPlayersSearchResponse(value: unknown): value is BeatleaderPlayersSearchResponse {
+    return this.isJsonObject(value);
+  }
+
+  private toPlayerCandidate(value: unknown): PlayerCandidate | null {
+    return this.isJsonObject(value) ? (value as PlayerCandidate) : null;
+  }
+
+  private isJsonObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }
