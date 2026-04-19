@@ -114,32 +114,36 @@ docker compose -f docker-compose.yml up --build overlay
 
 ## GitHub Actions
 
-В репозитории добавлены два workflow:
+В репозитории используется один workflow:
 
 - `.github/workflows/ci.yml`
-  Запускается на `push` и `pull_request`.
+
+Он запускается на:
+- `push` в `main`, `master`, `dev`
+- `push` тега `v*`
+- `pull_request`
+- `workflow_dispatch`
+
+Содержит два job:
+
+- `checks`
   Делает:
   - `npm install`
+  - `npm run lint`
+  - `npm test`
   - `npm run build`
   - `docker compose -f docker-compose.yml build overlay`
 
-- `.github/workflows/release.yml`
-  Запускается:
-  - на push в `dev`
-  - на теги вида `v*`
-  - вручную через `workflow_dispatch`
-
+- `release`
+  Запускается только после успешного `checks`.
   Делает:
-  - `npm install`
   - `npm run build:release`
   - генерацию `dist/overlay/release/index.html` как одного self-contained файла
-  - упаковку single-file release в `overlay-dist.zip`
-  - upload build artifact
-  - проверку Docker Compose build
+  - upload готового `index.html` как workflow artifact
   - создание prerelease на каждый push в `dev` с тегом вида `dev-YYYYMMDD-NN`
-  - создание обычного GitHub Release для tag-based запуска
+  - создание обычного GitHub Release для tag-based запуска с приложенным `index.html`
 
-Сейчас в проекте нет отдельных автоматических тестов, поэтому CI проверяет именно сборку приложения и Docker-образа.
+Таким образом релиз больше не может пройти без успешного линта, тестов и сборки.
 
 ## Быстрые команды
 
