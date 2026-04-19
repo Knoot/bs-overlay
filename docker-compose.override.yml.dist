@@ -1,0 +1,27 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - overlay
+    ports:
+      - "8080:80"
+    volumes:
+      - ./dist/overlay/browser:/usr/share/nginx/html:ro
+
+  overlay:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /workspace
+    command: sh -c "if [ ! -d node_modules/@angular ]; then npm install; fi && npm run watch -- --poll 1000"
+    volumes:
+      - ./src:/workspace/src
+      - ./angular.json:/workspace/angular.json:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./tsconfig.json:/workspace/tsconfig.json:ro
+      - ./tsconfig.app.json:/workspace/tsconfig.app.json:ro
+      - ./dist:/workspace/dist
+      - overlay_node_modules:/workspace/node_modules
+
+volumes:
+  overlay_node_modules:

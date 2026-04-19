@@ -1,0 +1,97 @@
+import { Lang, OverlayConfig } from '../models/overlay.models';
+
+export const PLACEHOLDER_COVER =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
+export const STORAGE_KEY = 'bsCyberConfig';
+
+export const DEFAULT_CONFIG: OverlayConfig = {
+  lang: 'ru',
+  ws: 'ws://127.0.0.1:2947/socket',
+  layout: 'top-left',
+  scale: 1,
+  blId: '',
+  resolvedBlId: '',
+  resolvedBlQuery: '',
+  showBL: true,
+  showDebugUI: true,
+  glowAvatar: true,
+  showCover: true,
+  showTitle: true,
+  showArtist: true,
+  showMeta: true,
+  showBsr: true,
+  showProgress: true,
+  showHp: true,
+  showStats: true,
+  showAcc: true,
+  showMapBg: true,
+  showBLBg: true
+};
+
+export const PROXIES = [
+  '',
+  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://thingproxy.freeboard.io/fetch/'
+];
+
+export const I18N: Record<Lang, Record<string, string>> = {
+  en: {
+    sysSetup: 'SYSTEM SETUP [F2]',
+    langLabel: 'Language / Язык',
+    layoutLabel: 'Layout (Alignment)',
+    scaleLabel: 'Scale (0.5 - 2.0)',
+    blLabel: 'BeatLeader ID / Nickname',
+    blPlaceholder: 'Example: 76561198029377687',
+    modulesLabel: 'Display Modules (On/Off)',
+    modBl: 'BeatLeader Menu',
+    modCover: 'Track Cover',
+    modTitle: 'Track Title',
+    modArtist: 'Artist / Mapper',
+    modMeta: 'Difficulty & BPM',
+    modBsr: 'BSR Code & Date',
+    modProg: 'Progress Bar',
+    modHp: 'HP Bar (Health)',
+    modStats: 'Miss / Combo',
+    modAcc: 'Accuracy (Acc)',
+    modGlow: 'Neon Glow',
+    modDebug: 'Debug Messages',
+    modMapBg: 'Map Card Background',
+    modBlBg: 'BeatLeader Background',
+    applyBtn: 'APPLY & RECONNECT',
+    waitingSong: 'Waiting for song...',
+    loading: 'Loading...',
+    profileNotFound: 'Profile not found',
+    profileLoadError: 'Error loading profile'
+  },
+  ru: {
+    sysSetup: 'СИСТЕМНЫЕ НАСТРОЙКИ [F2]',
+    langLabel: 'Язык / Language',
+    layoutLabel: 'Выравнивание (Layout)',
+    scaleLabel: 'Масштаб (0.5 - 2.0)',
+    blLabel: 'BeatLeader ID / Никнейм',
+    blPlaceholder: 'Например: 76561198029377687',
+    modulesLabel: 'Модули отображения (Вкл/Выкл)',
+    modBl: 'BeatLeader Меню',
+    modCover: 'Обложка трека',
+    modTitle: 'Название трека',
+    modArtist: 'Исполнитель / Маппер',
+    modMeta: 'Сложность и BPM',
+    modBsr: 'BSR код и Дата',
+    modProg: 'Прогресс-бар',
+    modHp: 'HP Бар (Здоровье)',
+    modStats: 'Промахи и Комбо',
+    modAcc: 'Точность (Acc)',
+    modGlow: 'Неоновое свечение',
+    modDebug: 'Сообщения отладки',
+    modMapBg: 'Фон карточки карты',
+    modBlBg: 'Фон BeatLeader',
+    applyBtn: 'ПРИМЕНИТЬ И ПЕРЕПОДКЛЮЧИТЬ',
+    waitingSong: 'Ожидание трека...',
+    loading: 'Загрузка...',
+    profileNotFound: 'Профиль не найден',
+    profileLoadError: 'Ошибка загрузки профиля'
+  }
+};

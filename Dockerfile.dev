@@ -1,0 +1,5 @@
+FROM node:20-alpine
+
+WORKDIR /workspace
+
+CMD ["sh", "-c", "if [ ! -d node_modules/@angular ]; then npm install; fi && npm run watch -- --poll 1000"]
