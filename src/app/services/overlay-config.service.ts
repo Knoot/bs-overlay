@@ -8,19 +8,21 @@ export class OverlayConfigService {
 
   loadConfig(): OverlayConfig {
     const saved = localStorage.getItem(STORAGE_KEY);
+    const baseConfig = { ...DEFAULT_CONFIG };
 
     if (saved) {
       try {
-        this.config = { ...DEFAULT_CONFIG, ...(JSON.parse(saved) as Partial<OverlayConfig>) };
+        this.config = { ...baseConfig, ...(JSON.parse(saved) as Partial<OverlayConfig>) };
       } catch (error) {
         console.warn('[BS+ Overlay] Invalid saved config. Resetting localStorage config.', error);
         localStorage.removeItem(STORAGE_KEY);
-        this.config = { ...DEFAULT_CONFIG };
+        this.config = baseConfig;
       }
     } else {
-      this.config = { ...DEFAULT_CONFIG };
+      this.config = baseConfig;
     }
 
+    this.config = { ...this.config, ...this.readQueryParams() };
     this.config.scale = this.clampScale(Number.parseFloat(String(this.config.scale)));
     return this.getConfig();
   }
@@ -68,5 +70,129 @@ export class OverlayConfigService {
 
   isLang(value: string): value is Lang {
     return value === 'en' || value === 'ru';
+  }
+
+  syncQueryParams(config: OverlayConfig): void {
+    const params = new URLSearchParams();
+
+    params.set('lang', config.lang);
+    params.set('ws', config.ws);
+    params.set('layout', config.layout);
+    params.set('scale', String(this.clampScale(config.scale)));
+    params.set('showBL', String(config.showBL));
+    params.set('showDebugUI', String(config.showDebugUI));
+    params.set('glowAvatar', String(config.glowAvatar));
+    params.set('showCover', String(config.showCover));
+    params.set('showTitle', String(config.showTitle));
+    params.set('showArtist', String(config.showArtist));
+    params.set('showMeta', String(config.showMeta));
+    params.set('showBsr', String(config.showBsr));
+    params.set('showProgress', String(config.showProgress));
+    params.set('showHp', String(config.showHp));
+    params.set('showStats', String(config.showStats));
+    params.set('showAcc', String(config.showAcc));
+    params.set('showMapBg', String(config.showMapBg));
+    params.set('showBLBg', String(config.showBLBg));
+
+    if (config.blId) {
+      params.set('blId', config.blId);
+    }
+
+    const query = params.toString();
+    const url = query ? `${window.location.pathname}?${query}${window.location.hash}` : `${window.location.pathname}${window.location.hash}`;
+    window.history.replaceState(null, '', url);
+  }
+
+  private readQueryParams(): Partial<OverlayConfig> {
+    const params = new URLSearchParams(window.location.search);
+    const partial: Partial<OverlayConfig> = {};
+    const lang = params.get('lang');
+    const ws = params.get('ws');
+    const layout = params.get('layout');
+    const scale = params.get('scale');
+    const blId = params.get('blId');
+
+    if (lang && this.isLang(lang)) {
+      partial.lang = lang;
+    }
+
+    if (ws) {
+      partial.ws = ws;
+    }
+
+    if (layout && this.isLayout(layout)) {
+      partial.layout = layout;
+    }
+
+    if (scale !== null) {
+      const parsedScale = Number.parseFloat(scale);
+      if (Number.isFinite(parsedScale)) {
+        partial.scale = this.clampScale(parsedScale);
+      }
+    }
+
+    if (blId !== null) {
+      partial.blId = blId.trim();
+    }
+
+    this.assignBooleanParam(params, partial, 'showBL');
+    this.assignBooleanParam(params, partial, 'showDebugUI');
+    this.assignBooleanParam(params, partial, 'glowAvatar');
+    this.assignBooleanParam(params, partial, 'showCover');
+    this.assignBooleanParam(params, partial, 'showTitle');
+    this.assignBooleanParam(params, partial, 'showArtist');
+    this.assignBooleanParam(params, partial, 'showMeta');
+    this.assignBooleanParam(params, partial, 'showBsr');
+    this.assignBooleanParam(params, partial, 'showProgress');
+    this.assignBooleanParam(params, partial, 'showHp');
+    this.assignBooleanParam(params, partial, 'showStats');
+    this.assignBooleanParam(params, partial, 'showAcc');
+    this.assignBooleanParam(params, partial, 'showMapBg');
+    this.assignBooleanParam(params, partial, 'showBLBg');
+
+    return partial;
+  }
+
+  private assignBooleanParam(
+    params: URLSearchParams,
+    target: Partial<OverlayConfig>,
+    key:
+      | 'showBL'
+      | 'showDebugUI'
+      | 'glowAvatar'
+      | 'showCover'
+      | 'showTitle'
+      | 'showArtist'
+      | 'showMeta'
+      | 'showBsr'
+      | 'showProgress'
+      | 'showHp'
+      | 'showStats'
+      | 'showAcc'
+      | 'showMapBg'
+      | 'showBLBg'
+  ): void {
+    const value = params.get(key);
+
+    if (value === null) {
+      return;
+    }
+
+    const parsed = this.parseBoolean(value);
+    if (parsed !== null) {
+      target[key] = parsed;
+    }
+  }
+
+  private parseBoolean(value: string): boolean | null {
+    if (value === 'true' || value === '1') {
+      return true;
+    }
+
+    if (value === 'false' || value === '0') {
+      return false;
+    }
+
+    return null;
   }
 }

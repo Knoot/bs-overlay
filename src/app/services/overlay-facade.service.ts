@@ -74,6 +74,7 @@ export class OverlayFacadeService {
 
     this.configService.setConfig(this.config);
     this.configService.persistConfig();
+    this.configService.syncQueryParams(this.config);
     this.dom.hideSettingsModal();
     this.dom.applyLanguage(this.config);
     this.dom.applyLayout(this.config);
@@ -82,7 +83,7 @@ export class OverlayFacadeService {
     this.dom.applyPanelBackgrounds(this.config);
     this.connectWS();
 
-    if (this.config.showBL) {
+    if (this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
     }
   }
@@ -231,7 +232,7 @@ export class OverlayFacadeService {
   }
 
   private async fetchBL(force: boolean = false): Promise<void> {
-    if (!this.config.blId || !this.config.showBL || this.isFetchingBL) {
+    if (!this.shouldShowBeatLeaderMenu() || this.isFetchingBL) {
       return;
     }
 
@@ -274,21 +275,27 @@ export class OverlayFacadeService {
   }
 
   private setMode(mode: ViewMode): void {
+    const showBeatLeaderMenu = this.shouldShowBeatLeaderMenu();
+
     if (mode === 'playing') {
       this.isGamePlaying = true;
       this.lastTimeAnchorMs = performance.now();
-      this.dom.setViewMode('playing', this.config.showBL);
+      this.dom.setViewMode('playing', showBeatLeaderMenu);
       this.startProgressLoop();
       return;
     }
 
     this.isGamePlaying = false;
     this.stopProgressLoop();
-    this.dom.setViewMode('menu', this.config.showBL);
+    this.dom.setViewMode('menu', showBeatLeaderMenu);
 
-    if (this.config.showBL) {
+    if (showBeatLeaderMenu) {
       void this.fetchBL();
     }
+  }
+
+  private shouldShowBeatLeaderMenu(): boolean {
+    return this.config.showBL && this.config.blId.trim().length > 0;
   }
 
   private syncSongTime(timeSec: number): void {

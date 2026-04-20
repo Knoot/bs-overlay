@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
       - dev
     tags:
       - 'v*'
@@ -53,6 +52,33 @@ jobs:
         with:
           name: overlay-index-html
           path: dist/overlay/release/index.html
+
+  pages:
+    needs: checks
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: overlay-index-html
+          path: github-pages
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: github-pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   release:
     needs: checks
