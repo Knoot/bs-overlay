@@ -14,7 +14,7 @@ export const DEFAULT_CONFIG: OverlayConfig = {
   resolvedBlId: '',
   resolvedBlQuery: '',
   showBL: true,
-  showDebugUI: true,
+  showDebugUI: false,
   glowAvatar: true,
   showCover: true,
   showTitle: true,

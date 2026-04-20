@@ -115,6 +115,7 @@ export interface OverlayElements {
   accLarge: HTMLElement;
   accNum: HTMLElement;
   accGrade: HTMLElement;
+  missLabel: HTMLElement;
   combo: HTMLElement;
   miss: HTMLElement;
   hpBarWrapper: HTMLElement;

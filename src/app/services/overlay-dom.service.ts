@@ -36,6 +36,7 @@ export class OverlayDomService {
       accLarge: this.mustQuery('.acc-large'),
       accNum: this.mustGet('acc-num'),
       accGrade: this.mustGet('acc-grade'),
+      missLabel: this.mustGet('miss-label'),
       combo: this.mustGet('combo-val'),
       miss: this.mustGet('miss-val'),
       hpBarWrapper: this.mustGet('hp-bar-wrapper'),
@@ -204,8 +205,8 @@ export class OverlayDomService {
     this.elements.blInfo.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
     this.elements.blInfo.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
     this.elements.bsrLine.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.hpFill.style.marginLeft = horizontal === 'right' ? 'auto' : '0';
-    this.elements.progFill.style.marginLeft = horizontal === 'right' ? 'auto' : '0';
+    this.elements.hpFill.style.marginLeft = '0';
+    this.elements.progFill.style.marginLeft = '0';
   }
 
   applyModules(config: OverlayConfig): void {
@@ -355,6 +356,14 @@ export class OverlayDomService {
   }
 
   updateMiss(missCount: number): void {
+    if (missCount === 0) {
+      this.elements.missLabel.style.display = 'none';
+      this.elements.miss.innerHTML =
+        '<span class="miss-fc-text">FC</span><span class="miss-fc-check" aria-hidden="true">✓</span>';
+      return;
+    }
+
+    this.elements.missLabel.style.display = '';
     this.elements.miss.textContent = String(missCount);
   }
 
