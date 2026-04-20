@@ -7,6 +7,7 @@ export const STORAGE_KEY = 'bsCyberConfig';
 
 export const DEFAULT_CONFIG: OverlayConfig = {
   lang: 'ru',
+  theme: 'cyberpunk',
   ws: 'ws://127.0.0.1:2947/socket',
   layout: 'top-left',
   scale: 1,
@@ -41,6 +42,7 @@ export const I18N: Record<Lang, Record<string, string>> = {
   en: {
     sysSetup: 'SYSTEM SETUP [F2]',
     langLabel: 'Language / Язык',
+    themeLabel: 'Theme',
     layoutLabel: 'Layout (Alignment)',
     scaleLabel: 'Scale (0.5 - 2.0)',
     blLabel: 'BeatLeader ID / Nickname',
@@ -69,6 +71,7 @@ export const I18N: Record<Lang, Record<string, string>> = {
   ru: {
     sysSetup: 'СИСТЕМНЫЕ НАСТРОЙКИ [F2]',
     langLabel: 'Язык / Language',
+    themeLabel: 'Тема',
     layoutLabel: 'Выравнивание (Layout)',
     scaleLabel: 'Масштаб (0.5 - 2.0)',
     blLabel: 'BeatLeader ID / Никнейм',

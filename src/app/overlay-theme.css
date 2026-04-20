@@ -1,0 +1,52 @@
+:root {
+  --neon-cyan: #0ff;
+  --neon-magenta: #f0f;
+  --neon-lime: #39ff14;
+  --neon-red: #ff3b3b;
+  --neon-gold: #f5d36b;
+  --bg-glass: rgba(10, 10, 15, 0.65);
+  --border-glow: 0 0 10px rgba(0, 255, 255, 0.3);
+  --soft-text-outline: -1px -1px 0 rgba(0, 0, 0, 0.65), 1px -1px 0 rgba(0, 0, 0, 0.65), -1px 1px 0 rgba(0, 0, 0, 0.65), 1px 1px 0 rgba(0, 0, 0, 0.65), 0 1px 2px rgba(0, 0, 0, 0.55);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel-radius: 12px;
+  --title-gradient: linear-gradient(45deg, var(--neon-cyan), #fff);
+  --title-glow: rgba(0, 255, 255, 0.4);
+  --progress-gradient: linear-gradient(90deg, var(--neon-magenta), var(--neon-cyan));
+  --hp-gradient: linear-gradient(90deg, #8b0000, var(--neon-magenta));
+  --settings-bg: rgba(10, 10, 15, 0.95);
+  --settings-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+}
+
+:root[data-theme="cyberpunk"] {
+  --neon-cyan: #0ff;
+  --neon-magenta: #f0f;
+  --neon-lime: #39ff14;
+  --neon-red: #ff3b3b;
+  --neon-gold: #f5d36b;
+  --bg-glass: rgba(10, 10, 15, 0.65);
+  --border-glow: 0 0 10px rgba(0, 255, 255, 0.3);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --title-gradient: linear-gradient(45deg, var(--neon-cyan), #fff);
+  --title-glow: rgba(0, 255, 255, 0.4);
+  --progress-gradient: linear-gradient(90deg, var(--neon-magenta), var(--neon-cyan));
+  --hp-gradient: linear-gradient(90deg, #8b0000, var(--neon-magenta));
+  --settings-bg: rgba(10, 10, 15, 0.95);
+  --settings-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+}
+
+:root[data-theme="sunset"] {
+  --neon-cyan: #ffcf66;
+  --neon-magenta: #ff6b8a;
+  --neon-lime: #9cff8a;
+  --neon-red: #ff7849;
+  --neon-gold: #ffe18a;
+  --bg-glass: rgba(28, 12, 18, 0.72);
+  --border-glow: 0 0 16px rgba(255, 166, 102, 0.28);
+  --panel-border: rgba(255, 206, 132, 0.16);
+  --title-gradient: linear-gradient(45deg, #ffd59a, #fff2da);
+  --title-glow: rgba(255, 184, 107, 0.35);
+  --progress-gradient: linear-gradient(90deg, #ff7a59, #ffd166);
+  --hp-gradient: linear-gradient(90deg, #8e2f3a, #ff7a59);
+  --settings-bg: rgba(24, 10, 16, 0.96);
+  --settings-shadow: 0 0 30px rgba(255, 158, 112, 0.24);
+}

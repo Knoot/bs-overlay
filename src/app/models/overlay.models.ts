@@ -1,4 +1,5 @@
 export type Lang = 'en' | 'ru';
+export type Theme = 'cyberpunk' | 'sunset';
 export type Layout =
   | 'top-left'
   | 'top-center'
@@ -12,6 +13,7 @@ export type ViewMode = 'menu' | 'playing';
 
 export interface OverlayConfig {
   lang: Lang;
+  theme: Theme;
   ws: string;
   layout: Layout;
   scale: number;
@@ -132,6 +134,7 @@ export interface OverlayElements {
   blLocal: HTMLElement;
   blPp: HTMLElement;
   inputWs: HTMLInputElement;
+  inputTheme: HTMLSelectElement;
   inputScale: HTMLInputElement;
   inputBl: HTMLInputElement;
   inputShowBl: HTMLInputElement;

@@ -13,7 +13,7 @@ import { OverlayFacadeService } from './services/overlay-facade.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css',
+  styleUrls: ['./app.component.css', './overlay-theme.css', './overlay-base.css', './overlay-settings.css'],
   encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements AfterViewInit, OnDestroy {

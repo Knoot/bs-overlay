@@ -1,0 +1,315 @@
+#settings-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: var(--settings-bg);
+  border: 1px solid var(--neon-cyan);
+  box-shadow: var(--settings-shadow);
+  padding: 25px;
+  border-radius: 12px;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  gap: 15px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+#settings-modal.show {
+  display: flex;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#settings-modal h2 {
+  margin: 0;
+  color: var(--neon-cyan);
+  text-align: center;
+  font-size: 18px;
+}
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.setting-row input[type="text"],
+.setting-row input[type="number"],
+.setting-row select {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: 1px solid #444;
+  padding: 8px;
+  font-family: 'Orbitron', sans-serif;
+  border-radius: 4px;
+  outline: none;
+}
+
+.setting-row select {
+  appearance: none;
+}
+
+.setting-row input:focus,
+.setting-row select:focus {
+  border-color: var(--neon-cyan);
+}
+
+.radio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: 0.2s;
+}
+
+.radio-label:hover {
+  border-color: var(--neon-cyan);
+}
+
+.radio-label input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--neon-cyan);
+}
+
+.layout-picker {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(18, 22, 36, 0.92), rgba(8, 10, 18, 0.92)),
+    radial-gradient(circle at top, rgba(0, 255, 255, 0.14), transparent 45%);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: visible;
+}
+
+.layout-picker-screen {
+  position: absolute;
+  inset: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(0, 255, 255, 0.08), rgba(255, 0, 255, 0.04)),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent calc(33.333% - 1px)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent calc(50% - 1px)
+    );
+}
+
+.layout-center-mark {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 48px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 14px rgba(0, 255, 255, 0.08);
+}
+
+.layout-grid {
+  position: absolute;
+  inset: 18px;
+}
+
+.layout-option {
+  position: absolute;
+  display: block;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.layout-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.layout-dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(10, 12, 20, 0.9);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.16);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.layout-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(8, 10, 18, 0.95);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: #d9ecff;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  z-index: 2;
+}
+
+.layout-option:hover .layout-tooltip,
+.layout-option input:checked + .layout-dot + .layout-tooltip {
+  opacity: 1;
+}
+
+.layout-option:hover .layout-dot {
+  border-color: var(--neon-cyan);
+  transform: scale(1.08);
+}
+
+.layout-option input:checked + .layout-dot {
+  background: radial-gradient(circle at 35% 35%, #ffffff, #8cf7ff 42%, #00d8ff 70%, #0083ff 100%);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 4px rgba(0, 255, 255, 0.12), 0 0 18px rgba(0, 255, 255, 0.5);
+  transform: scale(1.12);
+}
+
+.layout-top-left {
+  top: 0;
+  left: 0;
+}
+
+.layout-top-left .layout-tooltip,
+.layout-top-center .layout-tooltip,
+.layout-top-right .layout-tooltip {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.layout-top-left .layout-tooltip,
+.layout-bottom-left .layout-tooltip,
+.layout-middle-left .layout-tooltip {
+  left: 0;
+  transform: none;
+}
+
+.layout-top-center {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.layout-top-right {
+  top: 0;
+  right: 0;
+}
+
+.layout-top-right .layout-tooltip,
+.layout-bottom-right .layout-tooltip,
+.layout-middle-right .layout-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.layout-middle-left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.layout-middle-right {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.layout-bottom-left {
+  bottom: 0;
+  left: 0;
+}
+
+.layout-bottom-center {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.layout-bottom-right {
+  right: 0;
+  bottom: 0;
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #333;
+  transition: 0.2s;
+}
+
+.checkbox-row:hover {
+  border-color: var(--neon-cyan);
+}
+
+.checkbox-row input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--neon-cyan);
+}
+
+.setting-row button {
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 5px;
+  font-family: 'Orbitron', sans-serif;
+  transition: 0.2s;
+}
+
+.setting-row button:hover {
+  background: var(--neon-cyan);
+  color: #000;
+  box-shadow: 0 0 15px var(--neon-cyan);
+}

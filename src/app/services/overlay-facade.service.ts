@@ -36,6 +36,7 @@ export class OverlayFacadeService {
     this.dom.setupInitialView();
     this.config = this.configService.loadConfig();
     this.dom.populateInputs(this.config);
+    this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
     this.dom.applyModules(this.config);
     this.dom.applyLayout(this.config);
@@ -76,6 +77,7 @@ export class OverlayFacadeService {
     this.configService.persistConfig();
     this.configService.syncQueryParams(this.config);
     this.dom.hideSettingsModal();
+    this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
     this.dom.applyModules(this.config);
     this.dom.applyLayout(this.config);

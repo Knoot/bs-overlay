@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DEFAULT_CONFIG, I18N, STORAGE_KEY } from '../constants/overlay.constants';
-import { Lang, Layout, OverlayConfig } from '../models/overlay.models';
+import { Lang, Layout, OverlayConfig, Theme } from '../models/overlay.models';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayConfigService {
@@ -81,10 +81,15 @@ export class OverlayConfigService {
     return value === 'en' || value === 'ru';
   }
 
+  isTheme(value: string): value is Theme {
+    return value === 'cyberpunk' || value === 'sunset';
+  }
+
   syncQueryParams(config: OverlayConfig): void {
     const params = new URLSearchParams();
 
     params.set('lang', config.lang);
+    params.set('theme', config.theme);
     params.set('ws', config.ws);
     params.set('layout', config.layout);
     params.set('scale', String(this.clampScale(config.scale)));
@@ -116,6 +121,7 @@ export class OverlayConfigService {
     const params = new URLSearchParams(window.location.search);
     const partial: Partial<OverlayConfig> = {};
     const lang = params.get('lang');
+    const theme = params.get('theme');
     const ws = params.get('ws');
     const layout = params.get('layout');
     const scale = params.get('scale');
@@ -123,6 +129,10 @@ export class OverlayConfigService {
 
     if (lang && this.isLang(lang)) {
       partial.lang = lang;
+    }
+
+    if (theme && this.isTheme(theme)) {
+      partial.theme = theme;
     }
 
     if (ws) {

@@ -53,6 +53,7 @@ export class OverlayDomService {
       blLocal: this.mustGet('bl-local'),
       blPp: this.mustGet('bl-pp'),
       inputWs: this.mustGet('inp-ws') as HTMLInputElement,
+      inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
       inputScale: this.mustGet('inp-scale') as HTMLInputElement,
       inputBl: this.mustGet('inp-bl') as HTMLInputElement,
       inputShowBl: this.mustGet('inp-show-bl') as HTMLInputElement,
@@ -123,6 +124,7 @@ export class OverlayDomService {
 
   populateInputs(config: OverlayConfig): void {
     this.elements.inputWs.value = config.ws;
+    this.elements.inputTheme.value = config.theme;
     this.elements.inputScale.value = String(config.scale);
     this.elements.inputBl.value = config.blId;
     this.elements.inputShowBl.checked = config.showBL !== false;
@@ -149,6 +151,7 @@ export class OverlayDomService {
   readFormConfig(currentConfig: OverlayConfig): OverlayConfig {
     const checkedLayout = document.querySelector<HTMLInputElement>('input[name="layout"]:checked')?.value ?? currentConfig.layout;
     const checkedLang = document.querySelector<HTMLInputElement>('input[name="lang"]:checked')?.value ?? currentConfig.lang;
+    const checkedTheme = this.elements.inputTheme.value || currentConfig.theme;
 
     return {
       ...currentConfig,
@@ -169,9 +172,15 @@ export class OverlayDomService {
       showAcc: this.elements.inputShowAcc.checked,
       showMapBg: this.elements.inputMapBg.checked,
       showBLBg: this.elements.inputBlBg.checked,
+      theme: this.configService.isTheme(checkedTheme) ? checkedTheme : currentConfig.theme,
       layout: this.configService.isLayout(checkedLayout) ? checkedLayout : currentConfig.layout,
       lang: this.configService.isLang(checkedLang) ? checkedLang : currentConfig.lang
     };
+  }
+
+  applyTheme(config: OverlayConfig): void {
+    this.elements.app.dataset['theme'] = config.theme;
+    document.documentElement.dataset['theme'] = config.theme;
   }
 
   applyLayout(config: OverlayConfig): void {
