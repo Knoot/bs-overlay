@@ -355,6 +355,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 3px;
+  max-width: 340px;
 }
 
 #bl-name {
@@ -368,12 +369,20 @@
 .bl-stat-compact {
   font-size: 13px;
   color: #ccc;
+  line-height: 1.25;
 }
 
 .bl-stat-compact span {
   color: var(--neon-cyan);
   font-weight: bold;
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.bl-next-line {
+  font-size: 12px;
+  color: #bfc7d6;
 }
 
 #debug {

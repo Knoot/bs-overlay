@@ -18,6 +18,7 @@ import { OverlayFacadeService } from './services/overlay-facade.service';
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
   private readonly overlayFacade = inject(OverlayFacadeService);
+  activeSettingsTab: 'general' | 'beatleader' | 'song' = 'general';
 
   ngAfterViewInit(): void {
     this.overlayFacade.init();
@@ -29,5 +30,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   saveSettings(): void {
     this.overlayFacade.saveSettings();
+  }
+
+  setSettingsTab(tab: 'general' | 'beatleader' | 'song'): void {
+    this.activeSettingsTab = tab;
   }
 }

@@ -21,6 +21,9 @@ export interface OverlayConfig {
   resolvedBlId: string;
   resolvedBlQuery: string;
   showBL: boolean;
+  showBLNextGlobal: boolean;
+  showBLNextRegion: boolean;
+  showBLNextFriends: boolean;
   showDebugUI: boolean;
   glowAvatar: boolean;
   showCover: boolean;
@@ -46,11 +49,37 @@ export interface PlayerCandidate {
   avatar?: string;
 }
 
+export interface BeatleaderNextPlayerInfo {
+  name: string;
+  ppDelta: number | null;
+}
+
+export interface BeatleaderPlayerOverlayDetails {
+  global: BeatleaderNextPlayerInfo | null;
+  region: BeatleaderNextPlayerInfo | null;
+  friends: BeatleaderNextPlayerInfo | null;
+}
+
+export interface BeatleaderOverlayRequestOptions {
+  includeGlobal: boolean;
+  includeRegion: boolean;
+  includeFriends: boolean;
+}
+
 export interface BeatleaderPlayerResponse {
   data?: PlayerCandidate[];
 }
 
 export interface BeatleaderPlayersSearchResponse {
+  data?: PlayerCandidate[];
+}
+
+export interface BeatleaderPaginatedPlayersResponse {
+  metadata?: {
+    itemsPerPage?: number;
+    page?: number;
+    total?: number;
+  };
   data?: PlayerCandidate[];
 }
 
@@ -133,11 +162,18 @@ export interface OverlayElements {
   blGlobal: HTMLElement;
   blLocal: HTMLElement;
   blPp: HTMLElement;
+  blNextGlobal: HTMLElement;
+  blNextRegion: HTMLElement;
+  // blNextFriendsRow: HTMLElement;
+  // blNextFriends: HTMLElement;
   inputWs: HTMLInputElement;
   inputTheme: HTMLSelectElement;
   inputScale: HTMLInputElement;
   inputBl: HTMLInputElement;
   inputShowBl: HTMLInputElement;
+  inputShowBlNextGlobal: HTMLInputElement;
+  inputShowBlNextRegion: HTMLInputElement;
+  // inputShowBlNextFriends: HTMLInputElement;
   inputShowDebug: HTMLInputElement;
   inputGlowAvatar: HTMLInputElement;
   inputShowCover: HTMLInputElement;
@@ -155,6 +191,7 @@ export interface OverlayElements {
 
 export interface BeatleaderFetchResult {
   player: PlayerCandidate | null;
+  details: BeatleaderPlayerOverlayDetails;
   resolvedBlId: string;
   resolvedBlQuery: string;
   bestMatchName?: string;

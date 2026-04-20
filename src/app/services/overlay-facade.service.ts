@@ -245,7 +245,12 @@ export class OverlayFacadeService {
     this.isFetchingBL = true;
 
     try {
-      const result = await this.beatleader.fetchPlayer(this.config.blId, this.config.resolvedBlId, this.config.resolvedBlQuery);
+      const result = await this.beatleader.fetchPlayer(this.config.blId, this.config.resolvedBlId, this.config.resolvedBlQuery, {
+        includeGlobal: this.config.showBLNextGlobal,
+        includeRegion: this.config.showBLNextRegion,
+        // `bl-next-friends` is temporarily disabled. // this.config.showBLNextFriends
+        includeFriends: false
+      });
 
       if (!result.player?.name) {
         throw new Error('Player not found');
@@ -259,7 +264,7 @@ export class OverlayFacadeService {
       this.configService.setConfig(this.config);
       this.configService.persistConfig();
 
-      this.dom.renderBLPlayer(result.player);
+      this.dom.renderBLPlayer(result.player, result.details, this.config);
       this.lastBlFetch = Date.now();
 
       if (result.bestMatchName) {

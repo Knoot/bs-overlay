@@ -1,6 +1,13 @@
 import { Injectable } from '@angular/core';
 import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
-import { Lang, OverlayConfig, OverlayElements, PlayerCandidate, ViewMode } from '../models/overlay.models';
+import {
+  BeatleaderPlayerOverlayDetails,
+  Lang,
+  OverlayConfig,
+  OverlayElements,
+  PlayerCandidate,
+  ViewMode
+} from '../models/overlay.models';
 import { OverlayConfigService } from './overlay-config.service';
 
 @Injectable({ providedIn: 'root' })
@@ -52,11 +59,18 @@ export class OverlayDomService {
       blGlobal: this.mustGet('bl-global'),
       blLocal: this.mustGet('bl-local'),
       blPp: this.mustGet('bl-pp'),
+      blNextGlobal: this.mustGet('bl-next-global'),
+      blNextRegion: this.mustGet('bl-next-region'),
+      // blNextFriendsRow: this.mustGet('bl-next-friends-row'),
+      // blNextFriends: this.mustGet('bl-next-friends'),
       inputWs: this.mustGet('inp-ws') as HTMLInputElement,
       inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
       inputScale: this.mustGet('inp-scale') as HTMLInputElement,
       inputBl: this.mustGet('inp-bl') as HTMLInputElement,
       inputShowBl: this.mustGet('inp-show-bl') as HTMLInputElement,
+      inputShowBlNextGlobal: this.mustGet('inp-show-bl-next-global') as HTMLInputElement,
+      inputShowBlNextRegion: this.mustGet('inp-show-bl-next-region') as HTMLInputElement,
+      // inputShowBlNextFriends: this.mustGet('inp-show-bl-next-friends') as HTMLInputElement,
       inputShowDebug: this.mustGet('inp-show-debug') as HTMLInputElement,
       inputGlowAvatar: this.mustGet('inp-glow-avatar') as HTMLInputElement,
       inputShowCover: this.mustGet('inp-show-cover') as HTMLInputElement,
@@ -128,6 +142,9 @@ export class OverlayDomService {
     this.elements.inputScale.value = String(config.scale);
     this.elements.inputBl.value = config.blId;
     this.elements.inputShowBl.checked = config.showBL !== false;
+    this.elements.inputShowBlNextGlobal.checked = config.showBLNextGlobal !== false;
+    this.elements.inputShowBlNextRegion.checked = config.showBLNextRegion !== false;
+    // this.elements.inputShowBlNextFriends.checked = config.showBLNextFriends !== false;
     this.elements.inputShowDebug.checked = config.showDebugUI !== false;
     this.elements.inputGlowAvatar.checked = config.glowAvatar !== false;
     this.elements.inputShowCover.checked = config.showCover !== false;
@@ -159,6 +176,10 @@ export class OverlayDomService {
       scale: this.configService.clampScale(Number.parseFloat(this.elements.inputScale.value)),
       blId: this.elements.inputBl.value.trim(),
       showBL: this.elements.inputShowBl.checked,
+      showBLNextGlobal: this.elements.inputShowBlNextGlobal.checked,
+      showBLNextRegion: this.elements.inputShowBlNextRegion.checked,
+      // `bl-next-friends` is temporarily disabled; preserve stored config as-is.
+      showBLNextFriends: currentConfig.showBLNextFriends,
       showDebugUI: this.elements.inputShowDebug.checked,
       glowAvatar: this.elements.inputGlowAvatar.checked,
       showCover: this.elements.inputShowCover.checked,
@@ -240,6 +261,10 @@ export class OverlayDomService {
 
     const showBottomStats = config.showStats || config.showAcc;
     this.elements.bottomStats.style.display = showBottomStats ? 'flex' : 'none';
+    this.elements.blNextGlobal.parentElement!.style.display = config.showBLNextGlobal ? '' : 'none';
+    this.elements.blNextRegion.parentElement!.style.display = config.showBLNextRegion ? '' : 'none';
+    // this.elements.blNextFriendsRow.style.display =
+    //   config.showBLNextFriends && this.elements.blNextFriends.textContent !== 'N/A' ? '' : 'none';
   }
 
   applyGlow(config: OverlayConfig): void {
@@ -280,17 +305,29 @@ export class OverlayDomService {
     this.elements.blGlobal.textContent = '#--';
     this.elements.blLocal.textContent = '#--';
     this.elements.blPp.textContent = '-- pp';
+    this.elements.blNextGlobal.textContent = '--';
+    this.elements.blNextRegion.textContent = '--';
+    // this.elements.blNextFriends.textContent = '--';
+    this.elements.blNextGlobal.parentElement!.style.display = '';
+    this.elements.blNextRegion.parentElement!.style.display = '';
+    // this.elements.blNextFriendsRow.style.display = 'none';
     this.elements.blAvatar.src = '';
     this.elements.blAvatarWrapper.style.display = 'none';
   }
 
-  renderBLPlayer(player: PlayerCandidate): void {
+  renderBLPlayer(player: PlayerCandidate, details: BeatleaderPlayerOverlayDetails, config: OverlayConfig): void {
     this.elements.blName.textContent = player.name || 'Unknown';
     this.elements.blGlobal.textContent = player.rank ? `#${player.rank.toLocaleString()}` : '#--';
     this.elements.blLocal.textContent = player.countryRank
       ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})`
       : '#-- (N/A)';
     this.elements.blPp.textContent = player.pp ? `${Math.round(player.pp).toLocaleString()} pp` : '-- pp';
+    this.elements.blNextGlobal.textContent = this.formatBeatLeaderNeighbor(details.global);
+    this.elements.blNextRegion.textContent = this.formatBeatLeaderNeighbor(details.region);
+    // this.elements.blNextFriends.textContent = this.formatBeatLeaderNeighbor(details.friends);
+    this.elements.blNextGlobal.parentElement!.style.display = config.showBLNextGlobal ? '' : 'none';
+    this.elements.blNextRegion.parentElement!.style.display = config.showBLNextRegion ? '' : 'none';
+    // this.elements.blNextFriendsRow.style.display = config.showBLNextFriends && details.friends?.name ? '' : 'none';
 
     if (player.avatar) {
       this.elements.blAvatar.src = player.avatar;
@@ -396,6 +433,23 @@ export class OverlayDomService {
     const element = document.querySelector<HTMLElement>(selector);
     if (!element) throw new Error(`Required element ${selector} was not found`);
     return element;
+  }
+
+  private formatBeatLeaderNeighbor(info: BeatleaderPlayerOverlayDetails['global']): string {
+    if (!info?.name) {
+      return 'N/A';
+    }
+
+    if (typeof info.ppDelta !== 'number') {
+      return info.name;
+    }
+
+    const ppText = info.ppDelta.toLocaleString(undefined, {
+      minimumFractionDigits: info.ppDelta >= 100 ? 0 : 2,
+      maximumFractionDigits: info.ppDelta >= 100 ? 0 : 2
+    });
+
+    return `${info.name} • +${ppText} pp`;
   }
 
   private getHorizontalAlignment(layout: OverlayConfig['layout']): 'left' | 'center' | 'right' {

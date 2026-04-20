@@ -33,6 +33,46 @@
   font-size: 18px;
 }
 
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.settings-tab {
+  background: rgba(0, 0, 0, 0.35);
+  color: #b8c7da;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 9px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.settings-tab:hover {
+  border-color: var(--neon-cyan);
+  color: #fff;
+}
+
+.settings-tab.active {
+  color: #04111a;
+  background: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 14px rgba(0, 255, 255, 0.3);
+}
+
+.settings-tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.settings-tab-panel.active {
+  display: flex;
+}
+
 .setting-row {
   display: flex;
   flex-direction: column;
@@ -270,6 +310,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
+}
+
+.modules-grid-single {
+  grid-template-columns: 1fr;
 }
 
 .checkbox-row {

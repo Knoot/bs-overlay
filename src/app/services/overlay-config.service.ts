@@ -94,6 +94,9 @@ export class OverlayConfigService {
     params.set('layout', config.layout);
     params.set('scale', String(this.clampScale(config.scale)));
     params.set('showBL', String(config.showBL));
+    params.set('showBLNextGlobal', String(config.showBLNextGlobal));
+    params.set('showBLNextRegion', String(config.showBLNextRegion));
+    params.set('showBLNextFriends', String(config.showBLNextFriends));
     params.set('showDebugUI', String(config.showDebugUI));
     params.set('glowAvatar', String(config.glowAvatar));
     params.set('showCover', String(config.showCover));
@@ -155,6 +158,9 @@ export class OverlayConfigService {
     }
 
     this.assignBooleanParam(params, partial, 'showBL');
+    this.assignBooleanParam(params, partial, 'showBLNextGlobal');
+    this.assignBooleanParam(params, partial, 'showBLNextRegion');
+    this.assignBooleanParam(params, partial, 'showBLNextFriends');
     this.assignBooleanParam(params, partial, 'showDebugUI');
     this.assignBooleanParam(params, partial, 'glowAvatar');
     this.assignBooleanParam(params, partial, 'showCover');
@@ -177,6 +183,9 @@ export class OverlayConfigService {
     target: Partial<OverlayConfig>,
     key:
       | 'showBL'
+      | 'showBLNextGlobal'
+      | 'showBLNextRegion'
+      | 'showBLNextFriends'
       | 'showDebugUI'
       | 'glowAvatar'
       | 'showCover'
