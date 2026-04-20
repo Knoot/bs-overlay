@@ -174,34 +174,38 @@ export class OverlayDomService {
   }
 
   applyLayout(config: OverlayConfig): void {
-    const isLeft = config.layout.includes('left');
-    const isTop = config.layout.includes('top');
+    const horizontal = this.getHorizontalAlignment(config.layout);
+    const vertical = this.getVerticalAlignment(config.layout);
+    const translateX = horizontal === 'center' ? '-50%' : '0';
+    const translateY = '0';
+    const transformParts = [`translate(${translateX}, ${translateY})`, `scale(${config.scale})`];
+    const middleTop = this.getMiddleAnchorTop(config.scale);
 
-    this.elements.app.style.transformOrigin = `${isLeft ? 'left' : 'right'} ${isTop ? 'top' : 'bottom'}`;
-    this.elements.app.style.transform = `scale(${config.scale})`;
-    this.elements.app.style.top = isTop ? '20px' : 'auto';
-    this.elements.app.style.bottom = isTop ? 'auto' : '20px';
-    this.elements.app.style.left = isLeft ? '20px' : 'auto';
-    this.elements.app.style.right = isLeft ? 'auto' : '20px';
-    this.elements.playingOverlay.style.flexDirection = isTop ? 'column' : 'column-reverse';
-    this.elements.menuOverlay.style.top = isTop ? '0' : 'auto';
-    this.elements.menuOverlay.style.bottom = isTop ? 'auto' : '0';
-    this.elements.playingOverlay.style.top = isTop ? '0' : 'auto';
-    this.elements.playingOverlay.style.bottom = isTop ? 'auto' : '0';
-    this.elements.app.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.playingOverlay.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.headerRow.style.flexDirection = isLeft ? 'row' : 'row-reverse';
-    this.elements.textBlock.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.textBlock.style.textAlign = isLeft ? 'left' : 'right';
-    this.elements.statsRow.style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.bottomStats.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.bottomStatRow.style.flexDirection = isLeft ? 'row' : 'row-reverse';
-    this.elements.blWrapper.style.flexDirection = isLeft ? 'row' : 'row-reverse';
-    this.elements.blInfo.style.alignItems = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.blInfo.style.textAlign = isLeft ? 'left' : 'right';
-    this.elements.bsrLine.style.justifyContent = isLeft ? 'flex-start' : 'flex-end';
-    this.elements.hpFill.style.marginLeft = isLeft ? '0' : 'auto';
-    this.elements.progFill.style.marginLeft = isLeft ? '0' : 'auto';
+    this.elements.app.style.transformOrigin = `${horizontal} ${vertical === 'middle' ? 'center' : vertical}`;
+    this.elements.app.style.transform = transformParts.join(' ');
+    this.elements.app.style.top = vertical === 'top' ? '20px' : vertical === 'middle' ? middleTop : 'auto';
+    this.elements.app.style.bottom = vertical === 'bottom' ? '20px' : 'auto';
+    this.elements.app.style.left = horizontal === 'left' ? '20px' : horizontal === 'center' ? '50%' : 'auto';
+    this.elements.app.style.right = horizontal === 'right' ? '20px' : 'auto';
+    this.elements.playingOverlay.style.flexDirection = vertical === 'bottom' ? 'column-reverse' : 'column';
+    this.elements.menuOverlay.style.top = vertical === 'bottom' ? 'auto' : '0';
+    this.elements.menuOverlay.style.bottom = vertical === 'bottom' ? '0' : 'auto';
+    this.elements.playingOverlay.style.top = vertical === 'bottom' ? 'auto' : '0';
+    this.elements.playingOverlay.style.bottom = vertical === 'bottom' ? '0' : 'auto';
+    this.elements.app.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.playingOverlay.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.headerRow.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
+    this.elements.textBlock.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.textBlock.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
+    this.elements.statsRow.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.bottomStats.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.bottomStatRow.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
+    this.elements.blWrapper.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
+    this.elements.blInfo.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.blInfo.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
+    this.elements.bsrLine.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.hpFill.style.marginLeft = horizontal === 'right' ? 'auto' : '0';
+    this.elements.progFill.style.marginLeft = horizontal === 'right' ? 'auto' : '0';
   }
 
   applyModules(config: OverlayConfig): void {
@@ -374,5 +378,47 @@ export class OverlayDomService {
     const element = document.querySelector<HTMLElement>(selector);
     if (!element) throw new Error(`Required element ${selector} was not found`);
     return element;
+  }
+
+  private getHorizontalAlignment(layout: OverlayConfig['layout']): 'left' | 'center' | 'right' {
+    if (layout.endsWith('left')) {
+      return 'left';
+    }
+
+    if (layout.endsWith('right')) {
+      return 'right';
+    }
+
+    return 'center';
+  }
+
+  private getVerticalAlignment(layout: OverlayConfig['layout']): 'top' | 'middle' | 'bottom' {
+    if (layout.startsWith('top')) {
+      return 'top';
+    }
+
+    if (layout.startsWith('bottom')) {
+      return 'bottom';
+    }
+
+    return 'middle';
+  }
+
+  private getMiddleAnchorTop(scale: number): string {
+    const referenceHeight = this.getReferenceOverlayHeight();
+    const scaledHalfHeight = (referenceHeight * scale) / 2;
+    return `calc(50% - ${scaledHalfHeight}px)`;
+  }
+
+  private getReferenceOverlayHeight(): number {
+    if (this.elements.playingOverlay.classList.contains('active')) {
+      return this.elements.playingOverlay.offsetHeight;
+    }
+
+    if (this.elements.menuOverlay.classList.contains('active')) {
+      return this.elements.menuOverlay.offsetHeight;
+    }
+
+    return Math.max(this.elements.playingOverlay.offsetHeight, this.elements.menuOverlay.offsetHeight);
   }
 }

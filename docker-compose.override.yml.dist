@@ -13,6 +13,6 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     working_dir: /workspace
-    command: sh -c "if [ ! -d node_modules/@angular ]; then npm ci || npm install; fi && npm run watch -- --poll 1000"
+    command: sh -c "if [ ! -d node_modules/@angular ]; then npm ci || npm install; fi && rm -rf .angular dist/overlay/browser && npm run watch -- --poll 1000"
     volumes:
       - ./:/workspace

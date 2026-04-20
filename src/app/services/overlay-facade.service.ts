@@ -37,8 +37,8 @@ export class OverlayFacadeService {
     this.config = this.configService.loadConfig();
     this.dom.populateInputs(this.config);
     this.dom.applyLanguage(this.config);
-    this.dom.applyLayout(this.config);
     this.dom.applyModules(this.config);
+    this.dom.applyLayout(this.config);
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
     this.connectWS();
@@ -77,8 +77,8 @@ export class OverlayFacadeService {
     this.configService.syncQueryParams(this.config);
     this.dom.hideSettingsModal();
     this.dom.applyLanguage(this.config);
-    this.dom.applyLayout(this.config);
     this.dom.applyModules(this.config);
+    this.dom.applyLayout(this.config);
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
     this.connectWS();
@@ -281,6 +281,7 @@ export class OverlayFacadeService {
       this.isGamePlaying = true;
       this.lastTimeAnchorMs = performance.now();
       this.dom.setViewMode('playing', showBeatLeaderMenu);
+      this.dom.applyLayout(this.config);
       this.startProgressLoop();
       return;
     }
@@ -288,6 +289,7 @@ export class OverlayFacadeService {
     this.isGamePlaying = false;
     this.stopProgressLoop();
     this.dom.setViewMode('menu', showBeatLeaderMenu);
+    this.dom.applyLayout(this.config);
 
     if (showBeatLeaderMenu) {
       void this.fetchBL();

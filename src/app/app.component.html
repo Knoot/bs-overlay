@@ -80,11 +80,52 @@
   </div>
   <div class="setting-row">
     <label style="font-size: 12px; color: #ccc;" data-i18n="layoutLabel">Layout</label>
-    <div class="radio-grid">
-      <label class="radio-label"><input type="radio" name="layout" value="top-left"> Top Left</label>
-      <label class="radio-label"><input type="radio" name="layout" value="top-right"> Top Right</label>
-      <label class="radio-label"><input type="radio" name="layout" value="bottom-left"> Bottom Left</label>
-      <label class="radio-label"><input type="radio" name="layout" value="bottom-right"> Bottom Right</label>
+    <div class="layout-picker">
+      <div class="layout-picker-screen" aria-hidden="true">
+        <div class="layout-center-mark"></div>
+      </div>
+      <div class="layout-grid">
+        <label class="layout-option layout-top-left">
+          <input type="radio" name="layout" value="top-left">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Top Left</span>
+        </label>
+        <label class="layout-option layout-top-center">
+          <input type="radio" name="layout" value="top-center">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Top Center</span>
+        </label>
+        <label class="layout-option layout-top-right">
+          <input type="radio" name="layout" value="top-right">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Top Right</span>
+        </label>
+        <label class="layout-option layout-middle-left">
+          <input type="radio" name="layout" value="middle-left">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Left</span>
+        </label>
+        <label class="layout-option layout-middle-right">
+          <input type="radio" name="layout" value="middle-right">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Right</span>
+        </label>
+        <label class="layout-option layout-bottom-left">
+          <input type="radio" name="layout" value="bottom-left">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Bottom Left</span>
+        </label>
+        <label class="layout-option layout-bottom-center">
+          <input type="radio" name="layout" value="bottom-center">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Bottom Center</span>
+        </label>
+        <label class="layout-option layout-bottom-right">
+          <input type="radio" name="layout" value="bottom-right">
+          <span class="layout-dot"></span>
+          <span class="layout-tooltip">Bottom Right</span>
+        </label>
+      </div>
     </div>
   </div>
   <div class="setting-row">

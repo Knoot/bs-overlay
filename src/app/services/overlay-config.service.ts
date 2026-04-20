@@ -65,7 +65,16 @@ export class OverlayConfigService {
   }
 
   isLayout(value: string): value is Layout {
-    return ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(value);
+    return [
+      'top-left',
+      'top-center',
+      'top-right',
+      'middle-left',
+      'middle-right',
+      'bottom-left',
+      'bottom-center',
+      'bottom-right'
+    ].includes(value);
   }
 
   isLang(value: string): value is Lang {

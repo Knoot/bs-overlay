@@ -1,5 +1,13 @@
 export type Lang = 'en' | 'ru';
-export type Layout = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type Layout =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'middle-left'
+  | 'middle-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
 export type ViewMode = 'menu' | 'playing';
 
 export interface OverlayConfig {
