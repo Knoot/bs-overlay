@@ -30,22 +30,42 @@
 }
 
 .glass-panel {
+  position: relative;
+  overflow: hidden;
   background: var(--bg-glass);
-  backdrop-filter: blur(6px);
   border: 1px solid var(--panel-border);
   border-radius: var(--panel-radius);
   padding: 12px;
-  box-shadow: var(--border-glow);
+  box-shadow: var(--border-glow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025) 30%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(circle at top left, rgba(0, 255, 255, 0.12), transparent 40%);
+  opacity: 0.9;
+}
+
+.glass-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
 .panel-no-bg {
   background: transparent !important;
-  backdrop-filter: none !important;
-  border-color: transparent !important;
   box-shadow: none !important;
+}
+
+.panel-no-bg::before {
+  opacity: 0 !important;
 }
 
 #header-row {
@@ -127,7 +147,7 @@
   white-space: normal;
   word-wrap: break-word;
   line-height: 1.2;
-  filter: drop-shadow(0 0 5px var(--title-glow));
+  text-shadow: 0 0 6px var(--title-glow), 0 0 12px rgba(0, 255, 255, 0.18);
 }
 
 #artist-mapper {
