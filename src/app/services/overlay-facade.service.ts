@@ -43,6 +43,9 @@ export class OverlayFacadeService {
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
     this.connectWS();
+    if (this.shouldShowBeatLeaderMenu()) {
+      void this.fetchBL(true);
+    }
 
     this.blRefreshInterval = window.setInterval(() => {
       void this.fetchBL();
@@ -91,12 +94,14 @@ export class OverlayFacadeService {
   }
 
   private connectWS(): void {
+    const showBeatLeaderMenu = this.shouldShowBeatLeaderMenu();
     this.isGamePlaying = false;
     this.duration = 0;
     this.mapTimeMultiplier = 1;
     this.lastKnownSongTime = 0;
     this.stopProgressLoop();
-    this.dom.setAppVisible(false);
+    this.dom.setViewMode('menu', showBeatLeaderMenu);
+    this.dom.setAppVisible(showBeatLeaderMenu);
     this.dom.showDebug(`Connecting to ${this.config.ws}...`, this.config.showDebugUI);
 
     this.socket.connect(this.config.ws, {
@@ -107,12 +112,14 @@ export class OverlayFacadeService {
       },
       onMessage: (payload) => this.handleWsMessage(payload),
       onDisconnect: (error) => {
+        const showBeatLeaderMenu = this.shouldShowBeatLeaderMenu();
         this.isGamePlaying = false;
         this.stopProgressLoop();
         this.lastKnownSongTime = 0;
         this.lastTimeAnchorMs = 0;
         this.mapTimeMultiplier = 1;
-        this.dom.setAppVisible(false);
+        this.dom.setViewMode('menu', showBeatLeaderMenu);
+        this.dom.setAppVisible(showBeatLeaderMenu);
         const suffix = error ? ` (${this.describeError(error)})` : '';
         this.dom.showDebug(`WS Lost. Reconnecting...${suffix}`, this.config.showDebugUI);
       }
