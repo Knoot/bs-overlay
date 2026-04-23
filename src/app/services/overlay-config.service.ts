@@ -91,6 +91,7 @@ export class OverlayConfigService {
     params.set('lang', config.lang);
     params.set('theme', config.theme);
     params.set('ws', config.ws);
+    params.set('customProxy', config.customProxy);
     params.set('layout', config.layout);
     params.set('scale', String(this.clampScale(config.scale)));
     params.set('showBL', String(config.showBL));
@@ -126,6 +127,7 @@ export class OverlayConfigService {
     const lang = params.get('lang');
     const theme = params.get('theme');
     const ws = params.get('ws');
+    const customProxy = params.get('customProxy');
     const layout = params.get('layout');
     const scale = params.get('scale');
     const blId = params.get('blId');
@@ -140,6 +142,10 @@ export class OverlayConfigService {
 
     if (ws) {
       partial.ws = ws;
+    }
+
+    if (customProxy !== null) {
+      partial.customProxy = customProxy.trim();
     }
 
     if (layout && this.isLayout(layout)) {

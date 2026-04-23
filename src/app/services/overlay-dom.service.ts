@@ -67,6 +67,7 @@ export class OverlayDomService {
       inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
       inputScale: this.mustGet('inp-scale') as HTMLInputElement,
       inputBl: this.mustGet('inp-bl') as HTMLInputElement,
+      inputCustomProxy: this.mustGet('inp-custom-proxy') as HTMLInputElement,
       inputShowBl: this.mustGet('inp-show-bl') as HTMLInputElement,
       inputShowBlNextGlobal: this.mustGet('inp-show-bl-next-global') as HTMLInputElement,
       inputShowBlNextRegion: this.mustGet('inp-show-bl-next-region') as HTMLInputElement,
@@ -133,6 +134,7 @@ export class OverlayDomService {
     });
 
     this.elements.inputBl.placeholder = translations['blPlaceholder'];
+    this.elements.inputCustomProxy.placeholder = translations['customProxyPlaceholder'];
     document.documentElement.lang = config.lang;
   }
 
@@ -141,6 +143,7 @@ export class OverlayDomService {
     this.elements.inputTheme.value = config.theme;
     this.elements.inputScale.value = String(config.scale);
     this.elements.inputBl.value = config.blId;
+    this.elements.inputCustomProxy.value = config.customProxy;
     this.elements.inputShowBl.checked = config.showBL !== false;
     this.elements.inputShowBlNextGlobal.checked = config.showBLNextGlobal !== false;
     this.elements.inputShowBlNextRegion.checked = config.showBLNextRegion !== false;
@@ -173,6 +176,7 @@ export class OverlayDomService {
     return {
       ...currentConfig,
       ws: this.elements.inputWs.value.trim() || 'ws://127.0.0.1:2947/socket',
+      customProxy: this.elements.inputCustomProxy.value.trim(),
       scale: this.configService.clampScale(Number.parseFloat(this.elements.inputScale.value)),
       blId: this.elements.inputBl.value.trim(),
       showBL: this.elements.inputShowBl.checked,

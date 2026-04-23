@@ -15,6 +15,12 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BeatleaderService {
   private currentProxyIdx = 0;
+  private customProxy = '';
+
+  setCustomProxy(proxyPrefix: string): void {
+    this.customProxy = proxyPrefix.trim();
+    this.currentProxyIdx = 0;
+  }
 
   async fetchBsr(hash: string): Promise<BeatsaverMapByHashResponse> {
     const response = await fetch(`https://api.beatsaver.com/maps/hash/${hash}`, {
@@ -317,19 +323,20 @@ export class BeatleaderService {
     options?: { allowProxyFallback?: boolean; credentials?: RequestCredentials }
   ): Promise<unknown> {
     const allowProxyFallback = options?.allowProxyFallback !== false;
+    const proxyPool = this.getProxyPool();
     // BeatLeader API does not expose browser CORS headers for app origins like localhost/OBS,
     // so direct fetches fail in the client and we intentionally start with proxy routes.
     const shouldSkipDirectRequest = allowProxyFallback && originalUrl.startsWith('https://api.beatleader.com/');
     const attempts = allowProxyFallback
-      ? Array.from({ length: PROXIES.length }, (_, offset) => (this.currentProxyIdx + offset) % PROXIES.length).filter(
-          (index) => !(shouldSkipDirectRequest && PROXIES[index] === '')
+      ? Array.from({ length: proxyPool.length }, (_, offset) => (this.currentProxyIdx + offset) % proxyPool.length).filter(
+          (index) => !(shouldSkipDirectRequest && proxyPool[index] === '')
         )
       : [-1];
     let lastError: unknown = null;
 
     for (let offset = 0; offset < attempts.length; offset++) {
       const idx = attempts[offset];
-      const proxy = idx === -1 ? '' : PROXIES[idx];
+      const proxy = idx === -1 ? '' : proxyPool[idx];
       const targetUrl = proxy ? proxy + encodeURIComponent(originalUrl) : originalUrl;
 
       try {
@@ -358,6 +365,10 @@ export class BeatleaderService {
     }
 
     throw lastError || new Error('Request failed');
+  }
+
+  private getProxyPool(): string[] {
+    return this.customProxy ? [this.customProxy, ...PROXIES] : PROXIES;
   }
 
   private extractSinglePlayerResponse(value: unknown): PlayerCandidate | null {

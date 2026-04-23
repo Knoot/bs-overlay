@@ -35,6 +35,7 @@ export class OverlayFacadeService {
     this.dom.initializeElements();
     this.dom.setupInitialView();
     this.config = this.configService.loadConfig();
+    this.beatleader.setCustomProxy(this.config.customProxy);
     this.dom.populateInputs(this.config);
     this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
@@ -79,6 +80,7 @@ export class OverlayFacadeService {
     this.configService.setConfig(this.config);
     this.configService.persistConfig();
     this.configService.syncQueryParams(this.config);
+    this.beatleader.setCustomProxy(this.config.customProxy);
     this.dom.hideSettingsModal();
     this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);

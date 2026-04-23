@@ -15,6 +15,7 @@ export interface OverlayConfig {
   lang: Lang;
   theme: Theme;
   ws: string;
+  customProxy: string;
   layout: Layout;
   scale: number;
   blId: string;
@@ -170,6 +171,7 @@ export interface OverlayElements {
   inputTheme: HTMLSelectElement;
   inputScale: HTMLInputElement;
   inputBl: HTMLInputElement;
+  inputCustomProxy: HTMLInputElement;
   inputShowBl: HTMLInputElement;
   inputShowBlNextGlobal: HTMLInputElement;
   inputShowBlNextRegion: HTMLInputElement;
