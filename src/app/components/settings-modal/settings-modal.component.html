@@ -1,0 +1,138 @@
+<div id="settings-modal">
+  <h2 data-i18n="sysSetup">SYSTEM SETUP [F2]</h2>
+
+  <div class="settings-tabs">
+    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'general'" (click)="setSettingsTab('general')" data-i18n="tabGeneral">General</button>
+    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'beatleader'" (click)="setSettingsTab('beatleader')" data-i18n="tabBeatLeader">BeatLeader</button>
+    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'song'" (click)="setSettingsTab('song')" data-i18n="tabSongOverlay">Song Overlay</button>
+  </div>
+
+  <div class="settings-tab-panel" [class.active]="activeSettingsTab === 'general'">
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="langLabel">Language / Язык</label>
+      <div class="radio-grid">
+        <label class="radio-label"><input type="radio" name="lang" value="en"> English</label>
+        <label class="radio-label"><input type="radio" name="lang" value="ru"> Русский</label>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="themeLabel">Theme</label>
+      <select id="inp-theme">
+        <option value="cyberpunk">Cyberpunk</option>
+        <option value="sunset">Sunset</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;">WebSocket URL</label>
+      <input type="text" id="inp-ws" placeholder="ws://127.0.0.1:2947/socket">
+    </div>
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="customProxyLabel">Custom Proxy Prefix</label>
+      <input type="text" id="inp-custom-proxy" placeholder="https://my-proxy.example/?url=">
+    </div>
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="modulesLabel">Display Modules</label>
+      <div class="modules-grid modules-grid-single">
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-debug"> <span data-i18n="modDebug">Debug Msgs</span></label>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="layoutLabel">Layout</label>
+      <div class="layout-picker">
+        <div class="layout-picker-screen" aria-hidden="true">
+          <div class="layout-center-mark"></div>
+        </div>
+        <div class="layout-grid">
+          <label class="layout-option layout-top-left">
+            <input type="radio" name="layout" value="top-left">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Top Left</span>
+          </label>
+          <label class="layout-option layout-top-center">
+            <input type="radio" name="layout" value="top-center">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Top Center</span>
+          </label>
+          <label class="layout-option layout-top-right">
+            <input type="radio" name="layout" value="top-right">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Top Right</span>
+          </label>
+          <label class="layout-option layout-middle-left">
+            <input type="radio" name="layout" value="middle-left">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Left</span>
+          </label>
+          <label class="layout-option layout-middle-right">
+            <input type="radio" name="layout" value="middle-right">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Right</span>
+          </label>
+          <label class="layout-option layout-bottom-left">
+            <input type="radio" name="layout" value="bottom-left">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Bottom Left</span>
+          </label>
+          <label class="layout-option layout-bottom-center">
+            <input type="radio" name="layout" value="bottom-center">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Bottom Center</span>
+          </label>
+          <label class="layout-option layout-bottom-right">
+            <input type="radio" name="layout" value="bottom-right">
+            <span class="layout-dot"></span>
+            <span class="layout-tooltip">Bottom Right</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="scaleLabel">Scale</label>
+      <input type="number" step="0.1" id="inp-scale">
+    </div>
+  </div>
+
+  <div class="settings-tab-panel" [class.active]="activeSettingsTab === 'beatleader'">
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="blLabel">BeatLeader ID / Nickname</label>
+      <input type="text" id="inp-bl">
+    </div>
+
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc; margin-top: 5px;">BeatLeader</label>
+      <div class="modules-grid modules-grid-single">
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-bl"> <span data-i18n="modBl">BeatLeader Menu</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-global"> <span data-i18n="modBlNextGlobal">Next Global</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-region"> <span data-i18n="modBlNextRegion">Next Region</span></label>
+        <!-- <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-friends"> <span data-i18n="modBlNextFriends">Next Following</span></label> -->
+        <label class="checkbox-row"><input type="checkbox" id="inp-glow-avatar"> <span data-i18n="modGlow">Neon Glow</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-bl-bg"> <span data-i18n="modBlBg">BeatLeader Background</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-tab-panel" [class.active]="activeSettingsTab === 'song'">
+    <div class="setting-row">
+      <label style="font-size: 12px; color: #ccc; margin-top: 5px;" data-i18n="modulesLabel">Display Modules</label>
+      <div class="modules-grid">
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-cover"> <span data-i18n="modCover">Track Cover</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-title"> <span data-i18n="modTitle">Track Title</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-artist"> <span data-i18n="modArtist">Artist / Mapper</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-meta"> <span data-i18n="modMeta">Difficulty & BPM</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-bsr"> <span data-i18n="modBsr">BSR & Date</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-map-ratings"> <span data-i18n="modMapRatings">BeatLeader Map Ratings</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-progress"> <span data-i18n="modProg">Progress Bar</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-hp"> <span data-i18n="modHp">HP Bar</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-stats"> <span data-i18n="modStats">Miss / Combo</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-acc"> <span data-i18n="modAcc">Accuracy (Acc)</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-map-bg"> <span data-i18n="modMapBg">Map Card Background</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <button type="button" (click)="saveSettings()" data-i18n="applyBtn">APPLY & RECONNECT</button>
+  </div>
+</div>
