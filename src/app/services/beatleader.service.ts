@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { PROXIES } from '../constants/overlay.constants';
 import {
+  BeatleaderMapRatings,
   BeatleaderFetchResult,
   BeatleaderNextPlayerInfo,
   BeatleaderOverlayRequestOptions,
@@ -32,6 +33,32 @@ export class BeatleaderService {
     }
 
     return (await response.json()) as BeatsaverMapByHashResponse;
+  }
+
+  async fetchMapRatings(hash: string, difficulty: string, mode: string): Promise<BeatleaderMapRatings | null> {
+    const difficultyCandidates = this.getDifficultyCandidates(difficulty);
+    const modeCandidates = this.getModeCandidates(mode);
+    if (!hash || difficultyCandidates.length === 0 || modeCandidates.length === 0) {
+      return null;
+    }
+
+    for (const difficultyCandidate of difficultyCandidates) {
+      for (const modeCandidate of modeCandidates) {
+        try {
+          const json = await this.fetchJSONWithProxyFallback(
+            `https://api.beatleader.com/leaderboard/${hash}/${encodeURIComponent(difficultyCandidate)}/${encodeURIComponent(modeCandidate)}`
+          );
+          const ratings = this.extractMapRatingsResponse(json);
+          if (ratings) {
+            return ratings;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+
+    return null;
   }
 
   async fetchPlayer(
@@ -108,6 +135,46 @@ export class BeatleaderService {
 
   private normalizeLoose(value: string): string {
     return this.normalizeName(value).replace(/[_\-\s]+/g, '');
+  }
+
+  private normalizeDifficultyName(value: string): string {
+    const normalized = this.normalizeLoose(value);
+    const difficultyMap: Record<string, string> = {
+      easy: 'Easy',
+      normal: 'Normal',
+      hard: 'Hard',
+      expert: 'Expert',
+      expertplus: 'ExpertPlus'
+    };
+
+    return difficultyMap[normalized] ?? '';
+  }
+
+  private getDifficultyCandidates(value: string): string[] {
+    const trimmed = value.trim();
+    const normalized = this.normalizeDifficultyName(value);
+    return Array.from(new Set([trimmed, normalized].filter(Boolean)));
+  }
+
+  private normalizeModeName(value: string): string {
+    const normalized = this.normalizeLoose(value);
+    const modeMap: Record<string, string> = {
+      standard: 'Standard',
+      onesaber: 'OneSaber',
+      noarrows: 'NoArrows',
+      '90degree': '90Degree',
+      '360degree': '360Degree',
+      lawless: 'Lawless',
+      lightshow: 'Lightshow'
+    };
+
+    return modeMap[normalized] ?? value.trim();
+  }
+
+  private getModeCandidates(value: string): string[] {
+    const trimmed = value.trim();
+    const normalized = this.normalizeModeName(value);
+    return Array.from(new Set([trimmed, normalized].filter(Boolean)));
   }
 
   private scorePlayerMatch(player: PlayerCandidate, query: string): number {
@@ -417,6 +484,24 @@ export class BeatleaderService {
       .filter((item): item is PlayerCandidate => item !== null);
   }
 
+  private extractMapRatingsResponse(value: unknown): BeatleaderMapRatings | null {
+    if (!this.isJsonObject(value)) {
+      return null;
+    }
+
+    const difficulty = this.isJsonObject(value['difficulty']) ? value['difficulty'] : null;
+    if (!difficulty) {
+      return null;
+    }
+
+    return {
+      stars: this.toNullableNumber(difficulty['stars']),
+      tech: this.toNullableNumber(difficulty['techRating']),
+      acc: this.toNullableNumber(difficulty['accRating']),
+      pass: this.toNullableNumber(difficulty['passRating'])
+    };
+  }
+
   private isBeatleaderPlayerResponse(value: unknown): value is BeatleaderPlayerResponse {
     return this.isJsonObject(value);
   }
@@ -431,6 +516,10 @@ export class BeatleaderService {
 
   private toPlayerCandidate(value: unknown): PlayerCandidate | null {
     return this.isJsonObject(value) ? (value as PlayerCandidate) : null;
+  }
+
+  private toNullableNumber(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 
   private isJsonObject(value: unknown): value is Record<string, unknown> {

@@ -18,6 +18,10 @@ export class OverlayFacadeService {
   private lastBlFetch = 0;
   private isFetchingBL = false;
   private blRefreshInterval: number | null = null;
+  private currentMapHash = '';
+  private currentMapDifficulty = '';
+  private currentMapMode = '';
+  private lastMapRatingsKey = '';
   private readonly keydownHandler = (event: KeyboardEvent) => {
     if (event.key === 'F2') {
       this.dom.toggleSettingsModal();
@@ -43,6 +47,7 @@ export class OverlayFacadeService {
     this.dom.applyLayout(this.config);
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
+    this.dom.resetMapRatings();
     this.connectWS();
     if (this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
@@ -93,6 +98,8 @@ export class OverlayFacadeService {
     if (this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
     }
+
+    void this.refreshCurrentMapRatings(true);
   }
 
   private connectWS(): void {
@@ -101,7 +108,12 @@ export class OverlayFacadeService {
     this.duration = 0;
     this.mapTimeMultiplier = 1;
     this.lastKnownSongTime = 0;
+    this.currentMapHash = '';
+    this.currentMapDifficulty = '';
+    this.currentMapMode = '';
+    this.lastMapRatingsKey = '';
     this.stopProgressLoop();
+    this.dom.resetMapRatings();
     this.dom.setViewMode('menu', showBeatLeaderMenu);
     this.dom.setAppVisible(showBeatLeaderMenu);
     this.dom.showDebug(`Connecting to ${this.config.ws}...`, this.config.showDebugUI);
@@ -199,6 +211,11 @@ export class OverlayFacadeService {
     } else {
       this.dom.updateBsrLine('OST/DLC', '');
     }
+
+    this.currentMapHash = mapInfo.level_id?.startsWith('custom_level_') ? mapInfo.level_id.substring(13) : '';
+    this.currentMapDifficulty = mapInfo.difficulty || '';
+    this.currentMapMode = mapInfo.characteristic || '';
+    void this.refreshCurrentMapRatings();
 
     if (this.isGamePlaying) {
       this.startProgressLoop();
@@ -435,5 +452,37 @@ export class OverlayFacadeService {
     }
 
     return 'Unknown error';
+  }
+
+  private async refreshCurrentMapRatings(force: boolean = false): Promise<void> {
+    if (!this.config.showMapRatings || !this.config.showCover) {
+      this.dom.resetMapRatings();
+      return;
+    }
+
+    if (!this.currentMapHash || !this.currentMapDifficulty || !this.currentMapMode) {
+      this.dom.resetMapRatings();
+      return;
+    }
+
+    const lookupKey = `${this.currentMapHash}|${this.currentMapDifficulty}|${this.currentMapMode}`;
+    if (!force && this.lastMapRatingsKey === lookupKey) {
+      return;
+    }
+
+    this.lastMapRatingsKey = lookupKey;
+    this.dom.resetMapRatings();
+    const ratings = await this.beatleader.fetchMapRatings(this.currentMapHash, this.currentMapDifficulty, this.currentMapMode);
+
+    if (this.lastMapRatingsKey !== lookupKey) {
+      return;
+    }
+
+    if (!ratings) {
+      this.dom.resetMapRatings();
+      return;
+    }
+
+    this.dom.renderMapRatings(ratings, this.config);
   }
 }

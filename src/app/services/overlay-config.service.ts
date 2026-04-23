@@ -105,6 +105,7 @@ export class OverlayConfigService {
     params.set('showArtist', String(config.showArtist));
     params.set('showMeta', String(config.showMeta));
     params.set('showBsr', String(config.showBsr));
+    params.set('showMapRatings', String(config.showMapRatings));
     params.set('showProgress', String(config.showProgress));
     params.set('showHp', String(config.showHp));
     params.set('showStats', String(config.showStats));
@@ -174,6 +175,7 @@ export class OverlayConfigService {
     this.assignBooleanParam(params, partial, 'showArtist');
     this.assignBooleanParam(params, partial, 'showMeta');
     this.assignBooleanParam(params, partial, 'showBsr');
+    this.assignBooleanParam(params, partial, 'showMapRatings');
     this.assignBooleanParam(params, partial, 'showProgress');
     this.assignBooleanParam(params, partial, 'showHp');
     this.assignBooleanParam(params, partial, 'showStats');
@@ -199,6 +201,7 @@ export class OverlayConfigService {
       | 'showArtist'
       | 'showMeta'
       | 'showBsr'
+      | 'showMapRatings'
       | 'showProgress'
       | 'showHp'
       | 'showStats'

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
 import {
+  BeatleaderMapRatings,
   BeatleaderPlayerOverlayDetails,
   Lang,
   OverlayConfig,
@@ -38,6 +39,11 @@ export class OverlayDomService {
       date: this.mustGet('map-date'),
       coverWrapper: this.mustGet('cover-wrapper'),
       cover: this.mustGet('cover') as HTMLImageElement,
+      mapRatings: this.mustGet('map-ratings'),
+      mapRatingStars: this.mustGet('map-rating-stars'),
+      mapRatingTech: this.mustGet('map-rating-tech'),
+      mapRatingAcc: this.mustGet('map-rating-acc'),
+      mapRatingPass: this.mustGet('map-rating-pass'),
       bottomStats: this.mustGet('bottom-stats'),
       bottomStatRow: this.mustQuery('.bottom-stat-row'),
       accLarge: this.mustQuery('.acc-large'),
@@ -79,6 +85,7 @@ export class OverlayDomService {
       inputShowArtist: this.mustGet('inp-show-artist') as HTMLInputElement,
       inputShowMeta: this.mustGet('inp-show-meta') as HTMLInputElement,
       inputShowBsr: this.mustGet('inp-show-bsr') as HTMLInputElement,
+      inputShowMapRatings: this.mustGet('inp-show-map-ratings') as HTMLInputElement,
       inputShowProgress: this.mustGet('inp-show-progress') as HTMLInputElement,
       inputShowHp: this.mustGet('inp-show-hp') as HTMLInputElement,
       inputShowStats: this.mustGet('inp-show-stats') as HTMLInputElement,
@@ -155,6 +162,7 @@ export class OverlayDomService {
     this.elements.inputShowArtist.checked = config.showArtist !== false;
     this.elements.inputShowMeta.checked = config.showMeta !== false;
     this.elements.inputShowBsr.checked = config.showBsr !== false;
+    this.elements.inputShowMapRatings.checked = config.showMapRatings !== false;
     this.elements.inputShowProgress.checked = config.showProgress !== false;
     this.elements.inputShowHp.checked = config.showHp !== false;
     this.elements.inputShowStats.checked = config.showStats !== false;
@@ -191,6 +199,7 @@ export class OverlayDomService {
       showArtist: this.elements.inputShowArtist.checked,
       showMeta: this.elements.inputShowMeta.checked,
       showBsr: this.elements.inputShowBsr.checked,
+      showMapRatings: this.elements.inputShowMapRatings.checked,
       showProgress: this.elements.inputShowProgress.checked,
       showHp: this.elements.inputShowHp.checked,
       showStats: this.elements.inputShowStats.checked,
@@ -244,13 +253,15 @@ export class OverlayDomService {
   }
 
   applyModules(config: OverlayConfig): void {
+    const showMapRatings = config.showMapRatings && this.elements.mapRatings.dataset['state'] === 'ready';
     this.elements.coverWrapper.style.display = config.showCover ? 'flex' : 'none';
+    this.elements.mapRatings.style.display = showMapRatings ? 'flex' : 'none';
     this.elements.title.style.display = config.showTitle ? '' : 'none';
     this.elements.artist.style.display = config.showArtist ? '' : 'none';
     this.elements.metaLine.style.display = config.showMeta ? '' : 'none';
     this.elements.bsrLine.style.display = config.showBsr ? '' : 'none';
 
-    const showAnyText = config.showTitle || config.showArtist || config.showMeta || config.showBsr;
+    const showAnyText = config.showTitle || config.showArtist || config.showMeta || config.showBsr || showMapRatings;
     this.elements.textBlock.style.display = showAnyText ? 'flex' : 'none';
 
     const showHeader = config.showCover || showAnyText;
@@ -394,6 +405,35 @@ export class OverlayDomService {
     this.elements.date.textContent = dateText;
   }
 
+  resetMapRatings(): void {
+    this.elements.mapRatings.dataset['state'] = 'empty';
+    this.elements.mapRatingStars.textContent = '--';
+    this.elements.mapRatingTech.textContent = '--';
+    this.elements.mapRatingAcc.textContent = '--';
+    this.elements.mapRatingPass.textContent = '--';
+    this.elements.mapRatings.style.display = 'none';
+  }
+
+  renderMapRatings(ratings: BeatleaderMapRatings, config: OverlayConfig): void {
+    const hasAnyRating =
+      typeof ratings.stars === 'number' ||
+      typeof ratings.tech === 'number' ||
+      typeof ratings.acc === 'number' ||
+      typeof ratings.pass === 'number';
+
+    if (!hasAnyRating) {
+      this.resetMapRatings();
+      return;
+    }
+
+    this.elements.mapRatings.dataset['state'] = 'ready';
+    this.elements.mapRatingStars.textContent = this.formatMapRating(ratings.stars);
+    this.elements.mapRatingTech.textContent = this.formatMapRating(ratings.tech);
+    this.elements.mapRatingAcc.textContent = this.formatMapRating(ratings.acc);
+    this.elements.mapRatingPass.textContent = this.formatMapRating(ratings.pass);
+    this.elements.mapRatings.style.display = config.showMapRatings ? 'flex' : 'none';
+  }
+
   updateAccuracy(accuracy: number, grade: string, color: string): void {
     this.elements.accNum.textContent = `${(accuracy * 100).toFixed(1)}%`;
     this.elements.accGrade.textContent = grade;
@@ -454,6 +494,14 @@ export class OverlayDomService {
     });
 
     return `${info.name} • +${ppText} pp`;
+  }
+
+  private formatMapRating(value: number | null): string {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return '--';
+    }
+
+    return `${value.toFixed(2)}★`;
   }
 
   private getHorizontalAlignment(layout: OverlayConfig['layout']): 'left' | 'center' | 'right' {

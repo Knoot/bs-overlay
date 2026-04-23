@@ -32,6 +32,7 @@ export interface OverlayConfig {
   showArtist: boolean;
   showMeta: boolean;
   showBsr: boolean;
+  showMapRatings: boolean;
   showProgress: boolean;
   showHp: boolean;
   showStats: boolean;
@@ -59,6 +60,13 @@ export interface BeatleaderPlayerOverlayDetails {
   global: BeatleaderNextPlayerInfo | null;
   region: BeatleaderNextPlayerInfo | null;
   friends: BeatleaderNextPlayerInfo | null;
+}
+
+export interface BeatleaderMapRatings {
+  stars: number | null;
+  tech: number | null;
+  acc: number | null;
+  pass: number | null;
 }
 
 export interface BeatleaderOverlayRequestOptions {
@@ -142,6 +150,11 @@ export interface OverlayElements {
   date: HTMLElement;
   coverWrapper: HTMLElement;
   cover: HTMLImageElement;
+  mapRatings: HTMLElement;
+  mapRatingStars: HTMLElement;
+  mapRatingTech: HTMLElement;
+  mapRatingAcc: HTMLElement;
+  mapRatingPass: HTMLElement;
   bottomStats: HTMLElement;
   bottomStatRow: HTMLElement;
   accLarge: HTMLElement;
@@ -183,6 +196,7 @@ export interface OverlayElements {
   inputShowArtist: HTMLInputElement;
   inputShowMeta: HTMLInputElement;
   inputShowBsr: HTMLInputElement;
+  inputShowMapRatings: HTMLInputElement;
   inputShowProgress: HTMLInputElement;
   inputShowHp: HTMLInputElement;
   inputShowStats: HTMLInputElement;
