@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
-import { MapInfoPayload, OverlayConfig, ScoreEventPayload, ViewMode, WsPayload } from '../models/overlay.models';
+import { BeatleaderMapRatings, MapInfoPayload, OverlayConfig, ScoreEventPayload, ViewMode, WsPayload } from '../models/overlay.models';
 import { BeatleaderService } from './beatleader.service';
 import { OverlayConfigService } from './overlay-config.service';
 import { OverlayDomService } from './overlay-dom.service';
@@ -8,6 +8,7 @@ import { OverlaySocketService } from './overlay-socket.service';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayFacadeService {
+  private static readonly MAP_RATINGS_CACHE_LIMIT = 200;
   private config!: OverlayConfig;
   private isGamePlaying = false;
   private duration = 0;
@@ -22,6 +23,7 @@ export class OverlayFacadeService {
   private currentMapDifficulty = '';
   private currentMapMode = '';
   private lastMapRatingsKey = '';
+  private readonly mapRatingsCache = new Map<string, BeatleaderMapRatings | null>();
   private readonly keydownHandler = (event: KeyboardEvent) => {
     if (event.key === 'F2') {
       this.dom.toggleSettingsModal();
@@ -72,34 +74,44 @@ export class OverlayFacadeService {
   }
 
   saveSettings(): void {
-    const prevBlId = this.config.blId;
+    const previousConfig = this.config;
     this.config = this.dom.readFormConfig(this.config);
+    const wsChanged = this.config.ws !== previousConfig.ws;
+    const beatLeaderChanged =
+      this.config.blId !== previousConfig.blId ||
+      this.config.customProxy !== previousConfig.customProxy;
 
-    if (this.config.blId !== prevBlId) {
+    if (beatLeaderChanged) {
       this.config.resolvedBlId = '';
       this.config.resolvedBlQuery = '';
       this.lastBlFetch = 0;
+      this.lastMapRatingsKey = '';
       this.dom.resetBLDisplay(this.config.lang, 'loading');
+      this.dom.resetMapRatings();
     }
 
     this.configService.setConfig(this.config);
     this.configService.persistConfig();
     this.configService.syncQueryParams(this.config);
     this.beatleader.setCustomProxy(this.config.customProxy);
-    this.dom.hideSettingsModal();
     this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
     this.dom.applyModules(this.config);
     this.dom.applyLayout(this.config);
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
-    this.connectWS();
 
-    if (this.shouldShowBeatLeaderMenu()) {
+    if (wsChanged) {
+      this.connectWS();
+    }
+
+    if (beatLeaderChanged && this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
     }
 
-    void this.refreshCurrentMapRatings(true);
+    if (beatLeaderChanged || (!previousConfig.showMapRatings && this.config.showMapRatings)) {
+      void this.refreshCurrentMapRatings(false);
+    }
   }
 
   private connectWS(): void {
@@ -113,7 +125,7 @@ export class OverlayFacadeService {
     this.currentMapMode = '';
     this.lastMapRatingsKey = '';
     this.stopProgressLoop();
-    this.dom.resetMapRatings();
+    this.dom.resetGameOverlay(this.config.lang);
     this.dom.setViewMode('menu', showBeatLeaderMenu);
     this.dom.setAppVisible(showBeatLeaderMenu);
     this.dom.showDebug(`Connecting to ${this.config.ws}...`, this.config.showDebugUI);
@@ -456,33 +468,89 @@ export class OverlayFacadeService {
 
   private async refreshCurrentMapRatings(force: boolean = false): Promise<void> {
     if (!this.config.showMapRatings || !this.config.showCover) {
-      this.dom.resetMapRatings();
       return;
     }
 
     if (!this.currentMapHash || !this.currentMapDifficulty || !this.currentMapMode) {
+      this.lastMapRatingsKey = '';
       this.dom.resetMapRatings();
       return;
     }
 
     const lookupKey = `${this.currentMapHash}|${this.currentMapDifficulty}|${this.currentMapMode}`;
-    if (!force && this.lastMapRatingsKey === lookupKey) {
+    const ratingsState = this.dom.elements.mapRatings.dataset['state'];
+    const hasCachedResult = ratingsState === 'ready' || ratingsState === 'missing';
+
+    if (!force && this.lastMapRatingsKey === lookupKey && hasCachedResult) {
+      return;
+    }
+
+    const cachedRatings = this.getCachedMapRatings(lookupKey);
+    if (cachedRatings !== undefined) {
+      this.lastMapRatingsKey = lookupKey;
+
+      if (cachedRatings === null) {
+        this.dom.setMapRatingsUnavailable();
+        return;
+      }
+
+      this.dom.renderMapRatings(cachedRatings, this.config);
       return;
     }
 
     this.lastMapRatingsKey = lookupKey;
     this.dom.resetMapRatings();
-    const ratings = await this.beatleader.fetchMapRatings(this.currentMapHash, this.currentMapDifficulty, this.currentMapMode);
+
+    let ratings: BeatleaderMapRatings | null;
+    try {
+      ratings = await this.beatleader.fetchMapRatings(this.currentMapHash, this.currentMapDifficulty, this.currentMapMode);
+    } catch {
+      if (this.lastMapRatingsKey === lookupKey) {
+        this.lastMapRatingsKey = '';
+      }
+      this.dom.resetMapRatings();
+      return;
+    }
 
     if (this.lastMapRatingsKey !== lookupKey) {
       return;
     }
 
+    this.setCachedMapRatings(lookupKey, ratings);
+
     if (!ratings) {
-      this.dom.resetMapRatings();
+      this.dom.setMapRatingsUnavailable();
       return;
     }
 
     this.dom.renderMapRatings(ratings, this.config);
+  }
+
+  private getCachedMapRatings(lookupKey: string): BeatleaderMapRatings | null | undefined {
+    const cached = this.mapRatingsCache.get(lookupKey);
+    if (cached === undefined) {
+      return undefined;
+    }
+
+    this.mapRatingsCache.delete(lookupKey);
+    this.mapRatingsCache.set(lookupKey, cached);
+    return cached;
+  }
+
+  private setCachedMapRatings(lookupKey: string, ratings: BeatleaderMapRatings | null): void {
+    if (this.mapRatingsCache.has(lookupKey)) {
+      this.mapRatingsCache.delete(lookupKey);
+    }
+
+    this.mapRatingsCache.set(lookupKey, ratings);
+
+    if (this.mapRatingsCache.size <= OverlayFacadeService.MAP_RATINGS_CACHE_LIMIT) {
+      return;
+    }
+
+    const oldestKey = this.mapRatingsCache.keys().next().value;
+    if (oldestKey) {
+      this.mapRatingsCache.delete(oldestKey);
+    }
   }
 }

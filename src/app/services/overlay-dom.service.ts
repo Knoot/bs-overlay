@@ -304,6 +304,30 @@ export class OverlayDomService {
     this.elements.app.style.display = visible ? 'flex' : 'none';
   }
 
+  resetGameOverlay(lang: Lang): void {
+    this.elements.title.textContent = this.configService.getText(lang, 'waitingSong');
+    this.elements.artist.textContent = '-';
+    this.elements.diff.textContent = '-';
+    this.elements.diff.style.removeProperty('--diff-color');
+    this.elements.diff.style.removeProperty('--diff-shadow');
+    this.elements.bpm.textContent = 'BPM -';
+    this.elements.key.textContent = 'BSR: -';
+    this.elements.date.textContent = '';
+    this.elements.cover.src = PLACEHOLDER_COVER;
+    this.elements.progFill.style.width = '0%';
+    this.elements.hpFill.style.width = '100%';
+    this.elements.hpVal.textContent = '100%';
+    this.elements.accNum.textContent = '0.0%';
+    this.elements.accGrade.textContent = 'E';
+    this.elements.accGrade.style.color = '#e0e0e0';
+    this.elements.accGrade.style.textShadow = '0 0 10px #e0e0e0, 1px 1px 3px #000';
+    this.elements.combo.textContent = '0';
+    this.elements.missLabel.style.display = '';
+    this.elements.miss.textContent = '0';
+    this.setDefaultTime();
+    this.resetMapRatings();
+  }
+
   setViewMode(mode: ViewMode, showBL: boolean): void {
     if (mode === 'playing') {
       this.elements.menuOverlay.classList.remove('active');
@@ -414,6 +438,15 @@ export class OverlayDomService {
     this.elements.mapRatings.style.display = 'none';
   }
 
+  setMapRatingsUnavailable(): void {
+    this.elements.mapRatings.dataset['state'] = 'missing';
+    this.elements.mapRatingStars.textContent = '--';
+    this.elements.mapRatingTech.textContent = '--';
+    this.elements.mapRatingAcc.textContent = '--';
+    this.elements.mapRatingPass.textContent = '--';
+    this.elements.mapRatings.style.display = 'none';
+  }
+
   renderMapRatings(ratings: BeatleaderMapRatings, config: OverlayConfig): void {
     const hasAnyRating =
       typeof ratings.stars === 'number' ||
@@ -422,7 +455,7 @@ export class OverlayDomService {
       typeof ratings.pass === 'number';
 
     if (!hasAnyRating) {
-      this.resetMapRatings();
+      this.setMapRatingsUnavailable();
       return;
     }
 
