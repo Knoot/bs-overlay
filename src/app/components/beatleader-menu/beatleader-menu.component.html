@@ -1,16 +1,62 @@
 <div id="menu-overlay" class="view-mode glass-panel">
-  <div id="bl-wrapper">
-    <div id="bl-avatar-wrapper" class="avatar-glow-wrapper active-glow">
-      <img id="bl-avatar" src="" alt="Avatar">
+  <div id="rank-wrapper">
+    <div id="rank-avatar-wrapper" class="avatar-glow-wrapper active-glow">
+      <img id="rank-avatar" src="" alt="Rank Avatar">
     </div>
-    <div id="bl-info">
-      <div id="bl-name" data-i18n="loading">Loading...</div>
-      <div class="bl-stat-compact">Global: <span id="bl-global">#--</span></div>
-      <div class="bl-stat-compact">Local: <span id="bl-local">#--</span></div>
-      <div class="bl-stat-compact">PP: <span id="bl-pp">-- pp</span></div>
-      <div class="bl-stat-compact bl-next-line">Next Global: <span id="bl-next-global">--</span></div>
-      <div class="bl-stat-compact bl-next-line">Next Region: <span id="bl-next-region">--</span></div>
-      <!-- <div id="bl-next-friends-row" class="bl-stat-compact bl-next-line">Next Friend: <span id="bl-next-friends">--</span></div> -->
+    <div id="rank-info">
+      <div id="rank-name" data-i18n="loading">Loading...</div>
+
+      <div class="rank-stat-row">
+        <span class="rank-stat-label">Global:</span>
+        <span id="rank-global-bl-item" class="rank-service-value">
+          <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+          <span id="rank-global-bl">#--</span>
+        </span>
+        <span id="rank-global-ss-item" class="rank-service-value">
+          <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+          <span id="rank-global-ss">#--</span>
+        </span>
+      </div>
+
+      <div class="rank-stat-row">
+        <span class="rank-stat-label">Local:</span>
+        <span id="rank-local-bl-item" class="rank-service-value">
+          <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+          <span id="rank-local-bl">#--</span>
+        </span>
+        <span id="rank-local-ss-item" class="rank-service-value">
+          <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+          <span id="rank-local-ss">#--</span>
+        </span>
+      </div>
+
+      <div class="rank-stat-row">
+        <span class="rank-stat-label">PP:</span>
+        <span id="rank-pp-bl-item" class="rank-service-value">
+          <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+          <span id="rank-pp-bl">-- pp</span>
+        </span>
+        <span id="rank-pp-ss-item" class="rank-service-value">
+          <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+          <span id="rank-pp-ss">-- pp</span>
+        </span>
+      </div>
+
+      <div id="rank-next-global-row" class="rank-stat-row bl-next-line">
+        <span class="rank-stat-label">Next Global:</span>
+        <span class="rank-service-value">
+          <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+          <span id="rank-next-global">--</span>
+        </span>
+      </div>
+
+      <div id="rank-next-region-row" class="rank-stat-row bl-next-line">
+        <span class="rank-stat-label">Next Region:</span>
+        <span class="rank-service-value">
+          <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+          <span id="rank-next-region">--</span>
+        </span>
+      </div>
     </div>
   </div>
 </div>

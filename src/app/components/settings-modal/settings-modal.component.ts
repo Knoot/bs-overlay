@@ -10,12 +10,17 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class SettingsModalComponent {
   @Input({ required: true }) activeSettingsTab!: 'general' | 'beatleader' | 'song';
+  activeRankServiceTab: 'bl' | 'ss' = 'bl';
 
   @Output() readonly save = new EventEmitter<void>();
   @Output() readonly settingsTabChange = new EventEmitter<'general' | 'beatleader' | 'song'>();
 
   setSettingsTab(tab: 'general' | 'beatleader' | 'song'): void {
     this.settingsTabChange.emit(tab);
+  }
+
+  setRankServiceTab(tab: 'bl' | 'ss'): void {
+    this.activeRankServiceTab = tab;
   }
 
   saveSettings(): void {

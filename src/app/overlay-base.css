@@ -75,7 +75,7 @@
 }
 
 #cover-wrapper,
-#bl-avatar-wrapper {
+#rank-avatar-wrapper {
   position: relative;
   flex-shrink: 0;
 }
@@ -85,7 +85,7 @@
   height: 90px;
 }
 
-#bl-avatar-wrapper {
+#rank-avatar-wrapper {
   width: 75px;
   height: 75px;
   display: none;
@@ -95,37 +95,45 @@
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  align-self: center;
+  gap: 4px;
   margin-top: 2px;
   font-size: 11px;
   color: #bfc7d6;
   text-shadow: var(--soft-text-outline);
+  width: fit-content;
+  max-width: 100%;
 }
 
 .map-ratings-line {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
   justify-content: center;
-  white-space: nowrap;
 }
 
 .map-rating-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   white-space: nowrap;
 }
 
-.map-rating-item span,
-.map-ratings-total span {
+.map-rating-item span {
   color: #ffe761;
   font-weight: 700;
   text-shadow: 0 0 8px rgba(255, 231, 97, 0.55), 1px 1px 2px rgba(0, 0, 0, 0.75);
 }
 
-.map-ratings-total {
-  line-height: 1;
+.map-ratings-total-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
 }
 
-.map-ratings-total span {
+.map-ratings-total-row #map-rating-stars {
   font-size: 14px;
 }
 
@@ -137,7 +145,7 @@
   display: block;
 }
 
-#bl-avatar {
+#rank-avatar {
   width: 100%;
   height: 100%;
   border-radius: 12px;
@@ -158,7 +166,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-#bl-avatar-wrapper::after {
+#rank-avatar-wrapper::after {
   border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
@@ -403,21 +411,21 @@
   font-size: 32px;
 }
 
-#bl-wrapper {
+#rank-wrapper {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-#bl-info {
+#rank-info {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
+  gap: 5px;
   max-width: 340px;
 }
 
-#bl-name {
+#rank-name {
   font-size: 18px;
   font-weight: 900;
   color: var(--neon-magenta);
@@ -425,13 +433,27 @@
   margin-bottom: 2px;
 }
 
-.bl-stat-compact {
+.rank-stat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 13px;
   color: #ccc;
   line-height: 1.25;
+  flex-wrap: wrap;
 }
 
-.bl-stat-compact span {
+.rank-stat-label {
+  min-width: 68px;
+}
+
+.rank-service-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rank-service-value span {
   color: var(--neon-cyan);
   font-weight: bold;
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
@@ -442,6 +464,15 @@
 .bl-next-line {
   font-size: 12px;
   color: #bfc7d6;
+}
+
+.service-icon {
+  width: 13px;
+  height: 13px;
+  display: inline-block;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 3px;
 }
 
 #debug {

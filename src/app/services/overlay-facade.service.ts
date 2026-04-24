@@ -5,6 +5,7 @@ import { BeatleaderService } from './beatleader.service';
 import { OverlayConfigService } from './overlay-config.service';
 import { OverlayDomService } from './overlay-dom.service';
 import { OverlaySocketService } from './overlay-socket.service';
+import { ScoresaberService } from './scoresaber.service';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayFacadeService {
@@ -17,13 +18,17 @@ export class OverlayFacadeService {
   private mapTimeMultiplier = 1;
   private progressRafId: number | null = null;
   private lastBlFetch = 0;
+  private lastSsFetch = 0;
   private isFetchingBL = false;
+  private isFetchingSS = false;
   private blRefreshInterval: number | null = null;
   private currentMapHash = '';
   private currentMapDifficulty = '';
   private currentMapMode = '';
   private lastMapRatingsKey = '';
+  private lastSsStarsKey = '';
   private readonly mapRatingsCache = new Map<string, BeatleaderMapRatings | null>();
+  private readonly ssStarsCache = new Map<string, number | null>();
   private readonly keydownHandler = (event: KeyboardEvent) => {
     if (event.key === 'F2') {
       this.dom.toggleSettingsModal();
@@ -34,6 +39,7 @@ export class OverlayFacadeService {
     private readonly configService: OverlayConfigService,
     private readonly dom: OverlayDomService,
     private readonly beatleader: BeatleaderService,
+    private readonly scoresaber: ScoresaberService,
     private readonly socket: OverlaySocketService
   ) {}
 
@@ -42,6 +48,7 @@ export class OverlayFacadeService {
     this.dom.setupInitialView();
     this.config = this.configService.loadConfig();
     this.beatleader.setCustomProxy(this.config.customProxy);
+    this.scoresaber.setCustomProxy(this.config.customProxy);
     this.dom.populateInputs(this.config);
     this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
@@ -50,13 +57,18 @@ export class OverlayFacadeService {
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
     this.dom.resetMapRatings();
+    this.dom.resetSSStars();
     this.connectWS();
     if (this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
     }
+    if (this.shouldShowScoreSaberMenu()) {
+      void this.fetchSS(true);
+    }
 
     this.blRefreshInterval = window.setInterval(() => {
       void this.fetchBL();
+      void this.fetchSS();
     }, 900000);
 
     document.addEventListener('keydown', this.keydownHandler);
@@ -77,9 +89,9 @@ export class OverlayFacadeService {
     const previousConfig = this.config;
     this.config = this.dom.readFormConfig(this.config);
     const wsChanged = this.config.ws !== previousConfig.ws;
-    const beatLeaderChanged =
-      this.config.blId !== previousConfig.blId ||
-      this.config.customProxy !== previousConfig.customProxy;
+    const proxyChanged = this.config.customProxy !== previousConfig.customProxy;
+    const beatLeaderChanged = this.config.blId !== previousConfig.blId || proxyChanged;
+    const scoreSaberChanged = this.config.ssId !== previousConfig.ssId || proxyChanged;
 
     if (beatLeaderChanged) {
       this.config.resolvedBlId = '';
@@ -90,10 +102,20 @@ export class OverlayFacadeService {
       this.dom.resetMapRatings();
     }
 
+    if (scoreSaberChanged) {
+      this.config.resolvedSsId = '';
+      this.config.resolvedSsQuery = '';
+      this.lastSsFetch = 0;
+      this.lastSsStarsKey = '';
+      this.dom.resetSSDisplay(this.config.lang, 'loading');
+      this.dom.resetSSStars();
+    }
+
     this.configService.setConfig(this.config);
     this.configService.persistConfig();
     this.configService.syncQueryParams(this.config);
     this.beatleader.setCustomProxy(this.config.customProxy);
+    this.scoresaber.setCustomProxy(this.config.customProxy);
     this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
     this.dom.applyModules(this.config);
@@ -108,14 +130,20 @@ export class OverlayFacadeService {
     if (beatLeaderChanged && this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
     }
+    if (scoreSaberChanged && this.shouldShowScoreSaberMenu()) {
+      void this.fetchSS(true);
+    }
 
     if (beatLeaderChanged || (!previousConfig.showMapRatings && this.config.showMapRatings)) {
       void this.refreshCurrentMapRatings(false);
     }
+    if (scoreSaberChanged || (!previousConfig.showSSStars && this.config.showSSStars)) {
+      void this.refreshCurrentScoreSaberStars(false);
+    }
   }
 
   private connectWS(): void {
-    const showBeatLeaderMenu = this.shouldShowBeatLeaderMenu();
+    const showRankMenu = this.shouldShowRankMenu();
     this.isGamePlaying = false;
     this.duration = 0;
     this.mapTimeMultiplier = 1;
@@ -124,10 +152,11 @@ export class OverlayFacadeService {
     this.currentMapDifficulty = '';
     this.currentMapMode = '';
     this.lastMapRatingsKey = '';
+    this.lastSsStarsKey = '';
     this.stopProgressLoop();
     this.dom.resetGameOverlay(this.config.lang);
-    this.dom.setViewMode('menu', showBeatLeaderMenu);
-    this.dom.setAppVisible(showBeatLeaderMenu);
+    this.dom.setViewMode('menu', showRankMenu);
+    this.dom.setAppVisible(showRankMenu);
     this.dom.showDebug(`Connecting to ${this.config.ws}...`, this.config.showDebugUI);
 
     this.socket.connect(this.config.ws, {
@@ -138,14 +167,14 @@ export class OverlayFacadeService {
       },
       onMessage: (payload) => this.handleWsMessage(payload),
       onDisconnect: (error) => {
-        const showBeatLeaderMenu = this.shouldShowBeatLeaderMenu();
+        const showRankMenu = this.shouldShowRankMenu();
         this.isGamePlaying = false;
         this.stopProgressLoop();
         this.lastKnownSongTime = 0;
         this.lastTimeAnchorMs = 0;
         this.mapTimeMultiplier = 1;
-        this.dom.setViewMode('menu', showBeatLeaderMenu);
-        this.dom.setAppVisible(showBeatLeaderMenu);
+        this.dom.setViewMode('menu', showRankMenu);
+        this.dom.setAppVisible(showRankMenu);
         const suffix = error ? ` (${this.describeError(error)})` : '';
         this.dom.showDebug(`WS Lost. Reconnecting...${suffix}`, this.config.showDebugUI);
       }
@@ -228,6 +257,7 @@ export class OverlayFacadeService {
     this.currentMapDifficulty = mapInfo.difficulty || '';
     this.currentMapMode = mapInfo.characteristic || '';
     void this.refreshCurrentMapRatings();
+    void this.refreshCurrentScoreSaberStars();
 
     if (this.isGamePlaying) {
       this.startProgressLoop();
@@ -319,13 +349,56 @@ export class OverlayFacadeService {
     }
   }
 
+  private async fetchSS(force: boolean = false): Promise<void> {
+    if (!this.shouldShowScoreSaberMenu() || this.isFetchingSS) {
+      return;
+    }
+
+    if (!force && Date.now() - this.lastSsFetch < 900000) {
+      return;
+    }
+
+    this.isFetchingSS = true;
+
+    try {
+      const result = await this.scoresaber.fetchPlayer(this.config.ssId, this.config.resolvedSsId, this.config.resolvedSsQuery);
+
+      if (!result.player?.name) {
+        throw new Error('Player not found');
+      }
+
+      this.config = {
+        ...this.config,
+        resolvedSsId: result.resolvedSsId,
+        resolvedSsQuery: result.resolvedSsQuery
+      };
+      this.configService.setConfig(this.config);
+      this.configService.persistConfig();
+
+      this.dom.renderSSPlayer(result.player);
+      this.lastSsFetch = Date.now();
+
+      if (result.bestMatchName) {
+        this.dom.showDebug(`SS best match: ${result.bestMatchName}`, this.config.showDebugUI);
+      }
+
+      this.dom.showDebug('SS Profile Loaded Successfully!', this.config.showDebugUI);
+    } catch (error) {
+      const message = this.describeError(error);
+      this.dom.resetSSDisplay(this.config.lang, message === 'Player not found' ? 'profileNotFound' : 'profileLoadError');
+      this.dom.showDebug(`SS Error: ${message}`, this.config.showDebugUI);
+    } finally {
+      this.isFetchingSS = false;
+    }
+  }
+
   private setMode(mode: ViewMode): void {
-    const showBeatLeaderMenu = this.shouldShowBeatLeaderMenu();
+    const showRankMenu = this.shouldShowRankMenu();
 
     if (mode === 'playing') {
       this.isGamePlaying = true;
       this.lastTimeAnchorMs = performance.now();
-      this.dom.setViewMode('playing', showBeatLeaderMenu);
+      this.dom.setViewMode('playing', showRankMenu);
       this.dom.applyLayout(this.config);
       this.startProgressLoop();
       return;
@@ -333,16 +406,27 @@ export class OverlayFacadeService {
 
     this.isGamePlaying = false;
     this.stopProgressLoop();
-    this.dom.setViewMode('menu', showBeatLeaderMenu);
+    this.dom.setViewMode('menu', showRankMenu);
     this.dom.applyLayout(this.config);
 
-    if (showBeatLeaderMenu) {
+    if (this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL();
+    }
+    if (this.shouldShowScoreSaberMenu()) {
+      void this.fetchSS();
     }
   }
 
   private shouldShowBeatLeaderMenu(): boolean {
     return this.config.showBL && this.config.blId.trim().length > 0;
+  }
+
+  private shouldShowScoreSaberMenu(): boolean {
+    return this.config.showSS && this.config.ssId.trim().length > 0;
+  }
+
+  private shouldShowRankMenu(): boolean {
+    return this.shouldShowBeatLeaderMenu() || this.shouldShowScoreSaberMenu();
   }
 
   private syncSongTime(timeSec: number): void {
@@ -478,7 +562,7 @@ export class OverlayFacadeService {
     }
 
     const lookupKey = `${this.currentMapHash}|${this.currentMapDifficulty}|${this.currentMapMode}`;
-    const ratingsState = this.dom.elements.mapRatings.dataset['state'];
+    const ratingsState = this.dom.elements.mapRatings.dataset['blState'];
     const hasCachedResult = ratingsState === 'ready' || ratingsState === 'missing';
 
     if (!force && this.lastMapRatingsKey === lookupKey && hasCachedResult) {
@@ -526,6 +610,66 @@ export class OverlayFacadeService {
     this.dom.renderMapRatings(ratings, this.config);
   }
 
+  private async refreshCurrentScoreSaberStars(force: boolean = false): Promise<void> {
+    if (!this.config.showSSStars || !this.config.showCover) {
+      return;
+    }
+
+    if (!this.currentMapHash || !this.currentMapDifficulty || !this.currentMapMode) {
+      this.lastSsStarsKey = '';
+      this.dom.resetSSStars();
+      return;
+    }
+
+    const lookupKey = `${this.currentMapHash}|${this.currentMapDifficulty}|${this.currentMapMode}`;
+    const starsState = this.dom.elements.mapRatings.dataset['ssState'];
+    const hasCachedResult = starsState === 'ready' || starsState === 'missing';
+
+    if (!force && this.lastSsStarsKey === lookupKey && hasCachedResult) {
+      return;
+    }
+
+    const cachedStars = this.getCachedSsStars(lookupKey);
+    if (cachedStars !== undefined) {
+      this.lastSsStarsKey = lookupKey;
+
+      if (cachedStars === null) {
+        this.dom.setSSStarsUnavailable();
+        return;
+      }
+
+      this.dom.renderSSStars(cachedStars, this.config);
+      return;
+    }
+
+    this.lastSsStarsKey = lookupKey;
+    this.dom.resetSSStars();
+
+    let stars: number | null;
+    try {
+      stars = await this.scoresaber.fetchMapStars(this.currentMapHash, this.currentMapDifficulty, this.currentMapMode);
+    } catch {
+      if (this.lastSsStarsKey === lookupKey) {
+        this.lastSsStarsKey = '';
+      }
+      this.dom.resetSSStars();
+      return;
+    }
+
+    if (this.lastSsStarsKey !== lookupKey) {
+      return;
+    }
+
+    this.setCachedSsStars(lookupKey, stars);
+
+    if (stars === null) {
+      this.dom.setSSStarsUnavailable();
+      return;
+    }
+
+    this.dom.renderSSStars(stars, this.config);
+  }
+
   private getCachedMapRatings(lookupKey: string): BeatleaderMapRatings | null | undefined {
     const cached = this.mapRatingsCache.get(lookupKey);
     if (cached === undefined) {
@@ -551,6 +695,34 @@ export class OverlayFacadeService {
     const oldestKey = this.mapRatingsCache.keys().next().value;
     if (oldestKey) {
       this.mapRatingsCache.delete(oldestKey);
+    }
+  }
+
+  private getCachedSsStars(lookupKey: string): number | null | undefined {
+    const cached = this.ssStarsCache.get(lookupKey);
+    if (cached === undefined) {
+      return undefined;
+    }
+
+    this.ssStarsCache.delete(lookupKey);
+    this.ssStarsCache.set(lookupKey, cached);
+    return cached;
+  }
+
+  private setCachedSsStars(lookupKey: string, stars: number | null): void {
+    if (this.ssStarsCache.has(lookupKey)) {
+      this.ssStarsCache.delete(lookupKey);
+    }
+
+    this.ssStarsCache.set(lookupKey, stars);
+
+    if (this.ssStarsCache.size <= OverlayFacadeService.MAP_RATINGS_CACHE_LIMIT) {
+      return;
+    }
+
+    const oldestKey = this.ssStarsCache.keys().next().value;
+    if (oldestKey) {
+      this.ssStarsCache.delete(oldestKey);
     }
   }
 }

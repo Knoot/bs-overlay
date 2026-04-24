@@ -15,6 +15,11 @@ import { OverlayConfigService } from './overlay-config.service';
 export class OverlayDomService {
   private els?: OverlayElements;
   private debugTimeout: number | null = null;
+  private blPlayer: PlayerCandidate | null = null;
+  private blDetails: BeatleaderPlayerOverlayDetails = { global: null, region: null, friends: null };
+  private blStatusText = 'Loading...';
+  private ssPlayer: PlayerCandidate | null = null;
+  private ssStatusText = 'Loading...';
 
   constructor(private readonly configService: OverlayConfigService) {}
 
@@ -57,24 +62,40 @@ export class OverlayDomService {
       hpFill: this.mustGet('hp-bar-fill'),
       debug: this.mustGet('debug'),
       settings: this.mustGet('settings-modal'),
-      blWrapper: this.mustGet('bl-wrapper'),
-      blInfo: this.mustGet('bl-info'),
-      blAvatarWrapper: this.mustGet('bl-avatar-wrapper'),
-      blAvatar: this.mustGet('bl-avatar') as HTMLImageElement,
-      blName: this.mustGet('bl-name'),
-      blGlobal: this.mustGet('bl-global'),
-      blLocal: this.mustGet('bl-local'),
-      blPp: this.mustGet('bl-pp'),
-      blNextGlobal: this.mustGet('bl-next-global'),
-      blNextRegion: this.mustGet('bl-next-region'),
+      rankWrapper: this.mustGet('rank-wrapper'),
+      rankInfo: this.mustGet('rank-info'),
+      rankAvatarWrapper: this.mustGet('rank-avatar-wrapper'),
+      rankAvatar: this.mustGet('rank-avatar') as HTMLImageElement,
+      rankName: this.mustGet('rank-name'),
+      rankGlobalBlItem: this.mustGet('rank-global-bl-item'),
+      rankGlobalBl: this.mustGet('rank-global-bl'),
+      rankGlobalSsItem: this.mustGet('rank-global-ss-item'),
+      rankGlobalSs: this.mustGet('rank-global-ss'),
+      rankLocalBlItem: this.mustGet('rank-local-bl-item'),
+      rankLocalBl: this.mustGet('rank-local-bl'),
+      rankLocalSsItem: this.mustGet('rank-local-ss-item'),
+      rankLocalSs: this.mustGet('rank-local-ss'),
+      rankPpBlItem: this.mustGet('rank-pp-bl-item'),
+      rankPpBl: this.mustGet('rank-pp-bl'),
+      rankPpSsItem: this.mustGet('rank-pp-ss-item'),
+      rankPpSs: this.mustGet('rank-pp-ss'),
+      rankNextGlobalRow: this.mustGet('rank-next-global-row'),
+      rankNextGlobal: this.mustGet('rank-next-global'),
+      rankNextRegionRow: this.mustGet('rank-next-region-row'),
+      rankNextRegion: this.mustGet('rank-next-region'),
+      ssMapStars: this.mustGet('ss-map-stars'),
       // blNextFriendsRow: this.mustGet('bl-next-friends-row'),
       // blNextFriends: this.mustGet('bl-next-friends'),
       inputWs: this.mustGet('inp-ws') as HTMLInputElement,
       inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
       inputScale: this.mustGet('inp-scale') as HTMLInputElement,
       inputBl: this.mustGet('inp-bl') as HTMLInputElement,
+      inputSs: this.mustGet('inp-ss') as HTMLInputElement,
+      inputNameSource: this.mustGet('inp-name-source') as HTMLSelectElement,
+      inputAvatarSource: this.mustGet('inp-avatar-source') as HTMLSelectElement,
       inputCustomProxy: this.mustGet('inp-custom-proxy') as HTMLInputElement,
       inputShowBl: this.mustGet('inp-show-bl') as HTMLInputElement,
+      inputShowSs: this.mustGet('inp-show-ss') as HTMLInputElement,
       inputShowBlNextGlobal: this.mustGet('inp-show-bl-next-global') as HTMLInputElement,
       inputShowBlNextRegion: this.mustGet('inp-show-bl-next-region') as HTMLInputElement,
       // inputShowBlNextFriends: this.mustGet('inp-show-bl-next-friends') as HTMLInputElement,
@@ -86,6 +107,7 @@ export class OverlayDomService {
       inputShowMeta: this.mustGet('inp-show-meta') as HTMLInputElement,
       inputShowBsr: this.mustGet('inp-show-bsr') as HTMLInputElement,
       inputShowMapRatings: this.mustGet('inp-show-map-ratings') as HTMLInputElement,
+      inputShowSsStars: this.mustGet('inp-show-ss-stars') as HTMLInputElement,
       inputShowProgress: this.mustGet('inp-show-progress') as HTMLInputElement,
       inputShowHp: this.mustGet('inp-show-hp') as HTMLInputElement,
       inputShowStats: this.mustGet('inp-show-stats') as HTMLInputElement,
@@ -118,9 +140,9 @@ export class OverlayDomService {
       this.elements.title.textContent === 'Waiting for song...';
 
     const isDefaultLoading =
-      this.elements.blName.textContent === this.configService.getText('en', 'loading') ||
-      this.elements.blName.textContent === this.configService.getText('ru', 'loading') ||
-      this.elements.blName.textContent === 'Loading...';
+      this.elements.rankName.textContent === this.configService.getText('en', 'loading') ||
+      this.elements.rankName.textContent === this.configService.getText('ru', 'loading') ||
+      this.elements.rankName.textContent === 'Loading...';
 
     document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((element) => {
       const key = element.getAttribute('data-i18n');
@@ -133,7 +155,7 @@ export class OverlayDomService {
         return;
       }
 
-      if (element.id === 'bl-name' && !isDefaultLoading) {
+      if (element.id === 'rank-name' && !isDefaultLoading) {
         return;
       }
 
@@ -141,7 +163,9 @@ export class OverlayDomService {
     });
 
     this.elements.inputBl.placeholder = translations['blPlaceholder'];
+    this.elements.inputSs.placeholder = translations['ssPlaceholder'];
     this.elements.inputCustomProxy.placeholder = translations['customProxyPlaceholder'];
+    this.refreshRankProfile(config);
     document.documentElement.lang = config.lang;
   }
 
@@ -150,8 +174,12 @@ export class OverlayDomService {
     this.elements.inputTheme.value = config.theme;
     this.elements.inputScale.value = String(config.scale);
     this.elements.inputBl.value = config.blId;
+    this.elements.inputSs.value = config.ssId;
+    this.elements.inputNameSource.value = config.nameSource;
+    this.elements.inputAvatarSource.value = config.avatarSource;
     this.elements.inputCustomProxy.value = config.customProxy;
     this.elements.inputShowBl.checked = config.showBL !== false;
+    this.elements.inputShowSs.checked = config.showSS === true;
     this.elements.inputShowBlNextGlobal.checked = config.showBLNextGlobal !== false;
     this.elements.inputShowBlNextRegion.checked = config.showBLNextRegion !== false;
     // this.elements.inputShowBlNextFriends.checked = config.showBLNextFriends !== false;
@@ -163,6 +191,7 @@ export class OverlayDomService {
     this.elements.inputShowMeta.checked = config.showMeta !== false;
     this.elements.inputShowBsr.checked = config.showBsr !== false;
     this.elements.inputShowMapRatings.checked = config.showMapRatings !== false;
+    this.elements.inputShowSsStars.checked = config.showSSStars === true;
     this.elements.inputShowProgress.checked = config.showProgress !== false;
     this.elements.inputShowHp.checked = config.showHp !== false;
     this.elements.inputShowStats.checked = config.showStats !== false;
@@ -187,7 +216,11 @@ export class OverlayDomService {
       customProxy: this.elements.inputCustomProxy.value.trim(),
       scale: this.configService.clampScale(Number.parseFloat(this.elements.inputScale.value)),
       blId: this.elements.inputBl.value.trim(),
+      ssId: this.elements.inputSs.value.trim(),
+      nameSource: this.elements.inputNameSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
+      avatarSource: this.elements.inputAvatarSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
       showBL: this.elements.inputShowBl.checked,
+      showSS: this.elements.inputShowSs.checked,
       showBLNextGlobal: this.elements.inputShowBlNextGlobal.checked,
       showBLNextRegion: this.elements.inputShowBlNextRegion.checked,
       // `bl-next-friends` is temporarily disabled; preserve stored config as-is.
@@ -200,6 +233,7 @@ export class OverlayDomService {
       showMeta: this.elements.inputShowMeta.checked,
       showBsr: this.elements.inputShowBsr.checked,
       showMapRatings: this.elements.inputShowMapRatings.checked,
+      showSSStars: this.elements.inputShowSsStars.checked,
       showProgress: this.elements.inputShowProgress.checked,
       showHp: this.elements.inputShowHp.checked,
       showStats: this.elements.inputShowStats.checked,
@@ -244,18 +278,30 @@ export class OverlayDomService {
     this.elements.statsRow.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
     this.elements.bottomStats.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
     this.elements.bottomStatRow.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
-    this.elements.blWrapper.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
-    this.elements.blInfo.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.blInfo.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
+    this.elements.rankWrapper.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
+    this.elements.rankInfo.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    this.elements.rankInfo.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
     this.elements.bsrLine.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
     this.elements.hpFill.style.marginLeft = '0';
     this.elements.progFill.style.marginLeft = '0';
   }
 
   applyModules(config: OverlayConfig): void {
-    const showMapRatings = config.showMapRatings && this.elements.mapRatings.dataset['state'] === 'ready';
+    const showBlRatings = config.showMapRatings && this.elements.mapRatings.dataset['blState'] === 'ready';
+    const showSsStars = config.showSSStars && this.elements.mapRatings.dataset['ssState'] === 'ready';
+    const showMapRatings = showBlRatings || showSsStars;
+    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
     this.elements.coverWrapper.style.display = config.showCover ? 'flex' : 'none';
     this.elements.mapRatings.style.display = showMapRatings ? 'flex' : 'none';
+    if (blBreakdownRow) {
+      blBreakdownRow.style.display = showBlRatings ? 'flex' : 'none';
+    }
+    this.elements.mapRatingStars.parentElement!.style.display = showBlRatings ? 'inline-flex' : 'none';
+    this.elements.ssMapStars.parentElement!.style.display = showSsStars ? 'inline-flex' : 'none';
+    if (totalRow) {
+      totalRow.style.display = showMapRatings ? 'flex' : 'none';
+    }
     this.elements.title.style.display = config.showTitle ? '' : 'none';
     this.elements.artist.style.display = config.showArtist ? '' : 'none';
     this.elements.metaLine.style.display = config.showMeta ? '' : 'none';
@@ -276,14 +322,11 @@ export class OverlayDomService {
 
     const showBottomStats = config.showStats || config.showAcc;
     this.elements.bottomStats.style.display = showBottomStats ? 'flex' : 'none';
-    this.elements.blNextGlobal.parentElement!.style.display = config.showBLNextGlobal ? '' : 'none';
-    this.elements.blNextRegion.parentElement!.style.display = config.showBLNextRegion ? '' : 'none';
-    // this.elements.blNextFriendsRow.style.display =
-    //   config.showBLNextFriends && this.elements.blNextFriends.textContent !== 'N/A' ? '' : 'none';
+    this.refreshRankProfile(config);
   }
 
   applyGlow(config: OverlayConfig): void {
-    this.elements.blAvatarWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+    this.elements.rankAvatarWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
     this.elements.coverWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
   }
 
@@ -326,6 +369,7 @@ export class OverlayDomService {
     this.elements.miss.textContent = '0';
     this.setDefaultTime();
     this.resetMapRatings();
+    this.resetSSStars();
   }
 
   setViewMode(mode: ViewMode, showBL: boolean): void {
@@ -340,41 +384,29 @@ export class OverlayDomService {
   }
 
   resetBLDisplay(lang: Lang, messageKey: string = 'loading'): void {
-    this.elements.blName.textContent = this.configService.getText(lang, messageKey);
-    this.elements.blGlobal.textContent = '#--';
-    this.elements.blLocal.textContent = '#--';
-    this.elements.blPp.textContent = '-- pp';
-    this.elements.blNextGlobal.textContent = '--';
-    this.elements.blNextRegion.textContent = '--';
-    // this.elements.blNextFriends.textContent = '--';
-    this.elements.blNextGlobal.parentElement!.style.display = '';
-    this.elements.blNextRegion.parentElement!.style.display = '';
-    // this.elements.blNextFriendsRow.style.display = 'none';
-    this.elements.blAvatar.src = '';
-    this.elements.blAvatarWrapper.style.display = 'none';
+    this.blPlayer = null;
+    this.blDetails = { global: null, region: null, friends: null };
+    this.blStatusText = this.configService.getText(lang, messageKey);
+    this.refreshRankProfile(this.configService.getConfig());
   }
 
   renderBLPlayer(player: PlayerCandidate, details: BeatleaderPlayerOverlayDetails, config: OverlayConfig): void {
-    this.elements.blName.textContent = player.name || 'Unknown';
-    this.elements.blGlobal.textContent = player.rank ? `#${player.rank.toLocaleString()}` : '#--';
-    this.elements.blLocal.textContent = player.countryRank
-      ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})`
-      : '#-- (N/A)';
-    this.elements.blPp.textContent = player.pp ? `${Math.round(player.pp).toLocaleString()} pp` : '-- pp';
-    this.elements.blNextGlobal.textContent = this.formatBeatLeaderNeighbor(details.global);
-    this.elements.blNextRegion.textContent = this.formatBeatLeaderNeighbor(details.region);
-    // this.elements.blNextFriends.textContent = this.formatBeatLeaderNeighbor(details.friends);
-    this.elements.blNextGlobal.parentElement!.style.display = config.showBLNextGlobal ? '' : 'none';
-    this.elements.blNextRegion.parentElement!.style.display = config.showBLNextRegion ? '' : 'none';
-    // this.elements.blNextFriendsRow.style.display = config.showBLNextFriends && details.friends?.name ? '' : 'none';
+    this.blPlayer = player;
+    this.blDetails = details;
+    this.blStatusText = player.name || 'Unknown';
+    this.refreshRankProfile(config);
+  }
 
-    if (player.avatar) {
-      this.elements.blAvatar.src = player.avatar;
-      this.elements.blAvatarWrapper.style.display = 'block';
-    } else {
-      this.elements.blAvatar.src = '';
-      this.elements.blAvatarWrapper.style.display = 'none';
-    }
+  resetSSDisplay(lang: Lang, messageKey: string = 'loading'): void {
+    this.ssPlayer = null;
+    this.ssStatusText = this.configService.getText(lang, messageKey);
+    this.refreshRankProfile(this.configService.getConfig());
+  }
+
+  renderSSPlayer(player: PlayerCandidate): void {
+    this.ssPlayer = player;
+    this.ssStatusText = player.name || 'Unknown';
+    this.refreshRankProfile(this.configService.getConfig());
   }
 
   showDebug(message: string, enabled: boolean): void {
@@ -430,41 +462,113 @@ export class OverlayDomService {
   }
 
   resetMapRatings(): void {
-    this.elements.mapRatings.dataset['state'] = 'empty';
+    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
+    this.elements.mapRatings.dataset['blState'] = 'empty';
     this.elements.mapRatingStars.textContent = '--';
     this.elements.mapRatingTech.textContent = '--';
     this.elements.mapRatingAcc.textContent = '--';
     this.elements.mapRatingPass.textContent = '--';
-    this.elements.mapRatings.style.display = 'none';
+    if (blBreakdownRow) {
+      blBreakdownRow.style.display = 'none';
+    }
+    this.elements.mapRatingStars.parentElement!.style.display = 'none';
+    if (totalRow && this.elements.mapRatings.dataset['ssState'] !== 'ready') {
+      totalRow.style.display = 'none';
+    }
+    this.updateMapRatingsVisibility(this.configService.getConfig());
   }
 
   setMapRatingsUnavailable(): void {
-    this.elements.mapRatings.dataset['state'] = 'missing';
+    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
+    this.elements.mapRatings.dataset['blState'] = 'missing';
     this.elements.mapRatingStars.textContent = '--';
     this.elements.mapRatingTech.textContent = '--';
     this.elements.mapRatingAcc.textContent = '--';
     this.elements.mapRatingPass.textContent = '--';
-    this.elements.mapRatings.style.display = 'none';
+    if (blBreakdownRow) {
+      blBreakdownRow.style.display = 'none';
+    }
+    this.elements.mapRatingStars.parentElement!.style.display = 'none';
+    if (totalRow && this.elements.mapRatings.dataset['ssState'] !== 'ready') {
+      totalRow.style.display = 'none';
+    }
+    this.updateMapRatingsVisibility(this.configService.getConfig());
   }
 
   renderMapRatings(ratings: BeatleaderMapRatings, config: OverlayConfig): void {
+    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
     const hasAnyRating =
       typeof ratings.stars === 'number' ||
       typeof ratings.tech === 'number' ||
       typeof ratings.acc === 'number' ||
       typeof ratings.pass === 'number';
+    const hasCompleteBreakdown =
+      typeof ratings.tech === 'number' &&
+      Number.isFinite(ratings.tech) &&
+      typeof ratings.acc === 'number' &&
+      Number.isFinite(ratings.acc) &&
+      typeof ratings.pass === 'number' &&
+      Number.isFinite(ratings.pass);
 
     if (!hasAnyRating) {
       this.setMapRatingsUnavailable();
       return;
     }
 
-    this.elements.mapRatings.dataset['state'] = 'ready';
+    this.elements.mapRatings.dataset['blState'] = 'ready';
     this.elements.mapRatingStars.textContent = this.formatMapRating(ratings.stars);
     this.elements.mapRatingTech.textContent = this.formatMapRating(ratings.tech);
     this.elements.mapRatingAcc.textContent = this.formatMapRating(ratings.acc);
     this.elements.mapRatingPass.textContent = this.formatMapRating(ratings.pass);
-    this.elements.mapRatings.style.display = config.showMapRatings ? 'flex' : 'none';
+    if (blBreakdownRow) {
+      blBreakdownRow.style.display = config.showMapRatings && hasCompleteBreakdown ? 'flex' : 'none';
+    }
+    this.elements.mapRatingStars.parentElement!.style.display = config.showMapRatings ? 'inline-flex' : 'none';
+    if (totalRow) {
+      totalRow.style.display = 'flex';
+    }
+    this.updateMapRatingsVisibility(config);
+  }
+
+  resetSSStars(): void {
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
+    this.elements.mapRatings.dataset['ssState'] = 'empty';
+    this.elements.ssMapStars.textContent = '--';
+    this.elements.ssMapStars.parentElement!.style.display = 'none';
+    if (totalRow && this.elements.mapRatings.dataset['blState'] !== 'ready') {
+      totalRow.style.display = 'none';
+    }
+    this.updateMapRatingsVisibility(this.configService.getConfig());
+  }
+
+  setSSStarsUnavailable(): void {
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
+    this.elements.mapRatings.dataset['ssState'] = 'missing';
+    this.elements.ssMapStars.textContent = '--';
+    this.elements.ssMapStars.parentElement!.style.display = 'none';
+    if (totalRow && this.elements.mapRatings.dataset['blState'] !== 'ready') {
+      totalRow.style.display = 'none';
+    }
+    this.updateMapRatingsVisibility(this.configService.getConfig());
+  }
+
+  renderSSStars(stars: number, config: OverlayConfig): void {
+    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
+    if (!(stars > 0)) {
+      this.setSSStarsUnavailable();
+      return;
+    }
+
+    this.elements.mapRatings.dataset['ssState'] = 'ready';
+    this.elements.ssMapStars.textContent = this.formatMapRating(stars);
+    this.elements.ssMapStars.parentElement!.style.display = config.showSSStars ? 'inline-flex' : 'none';
+    if (totalRow) {
+      totalRow.style.display = 'flex';
+    }
+    this.updateMapRatingsVisibility(config);
   }
 
   updateAccuracy(accuracy: number, grade: string, color: string): void {
@@ -498,6 +602,133 @@ export class OverlayDomService {
 
   setDefaultTime(): void {
     this.elements.time.textContent = '0:00 / 0:00';
+  }
+
+  private refreshRankProfile(config: OverlayConfig): void {
+    const hasBL = config.showBL;
+    const hasSS = config.showSS;
+    const hasAnyService = hasBL || hasSS;
+    this.elements.rankWrapper.style.display = hasAnyService ? 'flex' : 'none';
+
+    this.setMetricItem(
+      this.elements.rankGlobalBlItem,
+      this.elements.rankGlobalBl,
+      hasBL,
+      this.formatRankValue(this.blPlayer?.rank, '#--')
+    );
+    this.setMetricItem(
+      this.elements.rankGlobalSsItem,
+      this.elements.rankGlobalSs,
+      hasSS,
+      this.formatRankValue(this.ssPlayer?.rank, '#--')
+    );
+    this.setMetricItem(
+      this.elements.rankLocalBlItem,
+      this.elements.rankLocalBl,
+      hasBL,
+      this.formatLocalValue(this.blPlayer)
+    );
+    this.setMetricItem(
+      this.elements.rankLocalSsItem,
+      this.elements.rankLocalSs,
+      hasSS,
+      this.formatLocalValue(this.ssPlayer)
+    );
+    this.setMetricItem(
+      this.elements.rankPpBlItem,
+      this.elements.rankPpBl,
+      hasBL,
+      this.formatPpValue(this.blPlayer?.pp)
+    );
+    this.setMetricItem(
+      this.elements.rankPpSsItem,
+      this.elements.rankPpSs,
+      hasSS,
+      this.formatPpValue(this.ssPlayer?.pp)
+    );
+
+    this.elements.rankNextGlobal.textContent = this.formatBeatLeaderNeighbor(this.blDetails.global);
+    this.elements.rankNextRegion.textContent = this.formatBeatLeaderNeighbor(this.blDetails.region);
+    this.elements.rankNextGlobalRow.style.display = hasBL && config.showBLNextGlobal ? 'flex' : 'none';
+    this.elements.rankNextRegionRow.style.display = hasBL && config.showBLNextRegion ? 'flex' : 'none';
+
+    const selectedName = this.pickPreferredSource(config.nameSource, hasBL, hasSS);
+    const selectedAvatar = this.pickPreferredSource(config.avatarSource, hasBL, hasSS);
+    this.elements.rankName.textContent = this.getStatusText(selectedName);
+
+    const avatarSrc = this.getAvatarSource(selectedAvatar);
+    if (avatarSrc) {
+      this.elements.rankAvatar.src = avatarSrc;
+      this.elements.rankAvatarWrapper.style.display = 'block';
+    } else {
+      this.elements.rankAvatar.src = '';
+      this.elements.rankAvatarWrapper.style.display = 'none';
+    }
+  }
+
+  private pickPreferredSource(
+    preferred: OverlayConfig['nameSource'] | OverlayConfig['avatarSource'],
+    hasBL: boolean,
+    hasSS: boolean
+  ): 'beatleader' | 'scoresaber' | null {
+    if (preferred === 'scoresaber' && hasSS) {
+      return 'scoresaber';
+    }
+
+    if (preferred === 'beatleader' && hasBL) {
+      return 'beatleader';
+    }
+
+    if (hasBL) {
+      return 'beatleader';
+    }
+
+    if (hasSS) {
+      return 'scoresaber';
+    }
+
+    return null;
+  }
+
+  private getStatusText(source: 'beatleader' | 'scoresaber' | null): string {
+    if (source === 'scoresaber') {
+      return this.ssPlayer?.name || this.ssStatusText;
+    }
+
+    if (source === 'beatleader') {
+      return this.blPlayer?.name || this.blStatusText;
+    }
+
+    return this.configService.getText(this.configService.getConfig().lang, 'loading');
+  }
+
+  private getAvatarSource(source: 'beatleader' | 'scoresaber' | null): string {
+    if (source === 'scoresaber') {
+      return this.ssPlayer?.avatar || '';
+    }
+
+    if (source === 'beatleader') {
+      return this.blPlayer?.avatar || '';
+    }
+
+    return '';
+  }
+
+  private setMetricItem(item: HTMLElement, value: HTMLElement, visible: boolean, text: string): void {
+    item.style.display = visible ? 'inline-flex' : 'none';
+    value.textContent = text;
+  }
+
+  private formatRankValue(value: number | undefined, fallback: string): string {
+    return typeof value === 'number' ? `#${value.toLocaleString()}` : fallback;
+  }
+
+  private formatLocalValue(player: PlayerCandidate | null): string {
+    return player?.countryRank ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})` : '#-- (N/A)';
+  }
+
+  private formatPpValue(value: number | undefined): string {
+    return typeof value === 'number' ? `${Math.round(value).toLocaleString()} pp` : '-- pp';
   }
 
   private mustGet(id: string): HTMLElement {
@@ -535,6 +766,12 @@ export class OverlayDomService {
     }
 
     return `${value.toFixed(2)}★`;
+  }
+
+  private updateMapRatingsVisibility(config: OverlayConfig): void {
+    const showBlRatings = config.showMapRatings && this.elements.mapRatings.dataset['blState'] === 'ready';
+    const showSsStars = config.showSSStars && this.elements.mapRatings.dataset['ssState'] === 'ready';
+    this.elements.mapRatings.style.display = showBlRatings || showSsStars ? 'flex' : 'none';
   }
 
   private getHorizontalAlignment(layout: OverlayConfig['layout']): 'left' | 'center' | 'right' {

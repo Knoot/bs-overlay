@@ -94,7 +94,10 @@ export class OverlayConfigService {
     params.set('customProxy', config.customProxy);
     params.set('layout', config.layout);
     params.set('scale', String(this.clampScale(config.scale)));
+    params.set('nameSource', config.nameSource);
+    params.set('avatarSource', config.avatarSource);
     params.set('showBL', String(config.showBL));
+    params.set('showSS', String(config.showSS));
     params.set('showBLNextGlobal', String(config.showBLNextGlobal));
     params.set('showBLNextRegion', String(config.showBLNextRegion));
     params.set('showBLNextFriends', String(config.showBLNextFriends));
@@ -106,6 +109,7 @@ export class OverlayConfigService {
     params.set('showMeta', String(config.showMeta));
     params.set('showBsr', String(config.showBsr));
     params.set('showMapRatings', String(config.showMapRatings));
+    params.set('showSSStars', String(config.showSSStars));
     params.set('showProgress', String(config.showProgress));
     params.set('showHp', String(config.showHp));
     params.set('showStats', String(config.showStats));
@@ -115,6 +119,10 @@ export class OverlayConfigService {
 
     if (config.blId) {
       params.set('blId', config.blId);
+    }
+
+    if (config.ssId) {
+      params.set('ssId', config.ssId);
     }
 
     const query = params.toString();
@@ -131,7 +139,10 @@ export class OverlayConfigService {
     const customProxy = params.get('customProxy');
     const layout = params.get('layout');
     const scale = params.get('scale');
+    const nameSource = params.get('nameSource');
+    const avatarSource = params.get('avatarSource');
     const blId = params.get('blId');
+    const ssId = params.get('ssId');
 
     if (lang && this.isLang(lang)) {
       partial.lang = lang;
@@ -164,7 +175,20 @@ export class OverlayConfigService {
       partial.blId = blId.trim();
     }
 
+    if (nameSource === 'beatleader' || nameSource === 'scoresaber') {
+      partial.nameSource = nameSource;
+    }
+
+    if (avatarSource === 'beatleader' || avatarSource === 'scoresaber') {
+      partial.avatarSource = avatarSource;
+    }
+
+    if (ssId !== null) {
+      partial.ssId = ssId.trim();
+    }
+
     this.assignBooleanParam(params, partial, 'showBL');
+    this.assignBooleanParam(params, partial, 'showSS');
     this.assignBooleanParam(params, partial, 'showBLNextGlobal');
     this.assignBooleanParam(params, partial, 'showBLNextRegion');
     this.assignBooleanParam(params, partial, 'showBLNextFriends');
@@ -176,6 +200,7 @@ export class OverlayConfigService {
     this.assignBooleanParam(params, partial, 'showMeta');
     this.assignBooleanParam(params, partial, 'showBsr');
     this.assignBooleanParam(params, partial, 'showMapRatings');
+    this.assignBooleanParam(params, partial, 'showSSStars');
     this.assignBooleanParam(params, partial, 'showProgress');
     this.assignBooleanParam(params, partial, 'showHp');
     this.assignBooleanParam(params, partial, 'showStats');
@@ -191,6 +216,7 @@ export class OverlayConfigService {
     target: Partial<OverlayConfig>,
     key:
       | 'showBL'
+      | 'showSS'
       | 'showBLNextGlobal'
       | 'showBLNextRegion'
       | 'showBLNextFriends'
@@ -202,6 +228,7 @@ export class OverlayConfigService {
       | 'showMeta'
       | 'showBsr'
       | 'showMapRatings'
+      | 'showSSStars'
       | 'showProgress'
       | 'showHp'
       | 'showStats'

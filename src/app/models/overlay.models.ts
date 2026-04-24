@@ -10,6 +10,7 @@ export type Layout =
   | 'bottom-center'
   | 'bottom-right';
 export type ViewMode = 'menu' | 'playing';
+export type RankIdentitySource = 'beatleader' | 'scoresaber';
 
 export interface OverlayConfig {
   lang: Lang;
@@ -19,9 +20,15 @@ export interface OverlayConfig {
   layout: Layout;
   scale: number;
   blId: string;
+  ssId: string;
+  nameSource: RankIdentitySource;
+  avatarSource: RankIdentitySource;
   resolvedBlId: string;
   resolvedBlQuery: string;
+  resolvedSsId: string;
+  resolvedSsQuery: string;
   showBL: boolean;
+  showSS: boolean;
   showBLNextGlobal: boolean;
   showBLNextRegion: boolean;
   showBLNextFriends: boolean;
@@ -33,6 +40,7 @@ export interface OverlayConfig {
   showMeta: boolean;
   showBsr: boolean;
   showMapRatings: boolean;
+  showSSStars: boolean;
   showProgress: boolean;
   showHp: boolean;
   showStats: boolean;
@@ -168,24 +176,40 @@ export interface OverlayElements {
   hpFill: HTMLElement;
   debug: HTMLElement;
   settings: HTMLElement;
-  blWrapper: HTMLElement;
-  blInfo: HTMLElement;
-  blAvatarWrapper: HTMLElement;
-  blAvatar: HTMLImageElement;
-  blName: HTMLElement;
-  blGlobal: HTMLElement;
-  blLocal: HTMLElement;
-  blPp: HTMLElement;
-  blNextGlobal: HTMLElement;
-  blNextRegion: HTMLElement;
+  rankWrapper: HTMLElement;
+  rankInfo: HTMLElement;
+  rankAvatarWrapper: HTMLElement;
+  rankAvatar: HTMLImageElement;
+  rankName: HTMLElement;
+  rankGlobalBlItem: HTMLElement;
+  rankGlobalBl: HTMLElement;
+  rankGlobalSsItem: HTMLElement;
+  rankGlobalSs: HTMLElement;
+  rankLocalBlItem: HTMLElement;
+  rankLocalBl: HTMLElement;
+  rankLocalSsItem: HTMLElement;
+  rankLocalSs: HTMLElement;
+  rankPpBlItem: HTMLElement;
+  rankPpBl: HTMLElement;
+  rankPpSsItem: HTMLElement;
+  rankPpSs: HTMLElement;
+  rankNextGlobalRow: HTMLElement;
+  rankNextGlobal: HTMLElement;
+  rankNextRegionRow: HTMLElement;
+  rankNextRegion: HTMLElement;
+  ssMapStars: HTMLElement;
   // blNextFriendsRow: HTMLElement;
   // blNextFriends: HTMLElement;
   inputWs: HTMLInputElement;
   inputTheme: HTMLSelectElement;
   inputScale: HTMLInputElement;
   inputBl: HTMLInputElement;
+  inputSs: HTMLInputElement;
+  inputNameSource: HTMLSelectElement;
+  inputAvatarSource: HTMLSelectElement;
   inputCustomProxy: HTMLInputElement;
   inputShowBl: HTMLInputElement;
+  inputShowSs: HTMLInputElement;
   inputShowBlNextGlobal: HTMLInputElement;
   inputShowBlNextRegion: HTMLInputElement;
   // inputShowBlNextFriends: HTMLInputElement;
@@ -197,6 +221,7 @@ export interface OverlayElements {
   inputShowMeta: HTMLInputElement;
   inputShowBsr: HTMLInputElement;
   inputShowMapRatings: HTMLInputElement;
+  inputShowSsStars: HTMLInputElement;
   inputShowProgress: HTMLInputElement;
   inputShowHp: HTMLInputElement;
   inputShowStats: HTMLInputElement;
@@ -211,6 +236,27 @@ export interface BeatleaderFetchResult {
   resolvedBlId: string;
   resolvedBlQuery: string;
   bestMatchName?: string;
+}
+
+export interface ScoresaberFetchResult {
+  player: PlayerCandidate | null;
+  resolvedSsId: string;
+  resolvedSsQuery: string;
+  bestMatchName?: string;
+}
+
+export interface ScoresaberPlayerResponse {
+  id?: string;
+  name?: string;
+  profilePicture?: string;
+  country?: string;
+  pp?: number;
+  rank?: number;
+  countryRank?: number;
+}
+
+export interface ScoresaberPlayersSearchResponse {
+  players?: ScoresaberPlayerResponse[];
 }
 
 export interface SocketCallbacks {
