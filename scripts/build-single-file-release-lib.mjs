@@ -13,6 +13,7 @@ export async function buildSingleFileRelease({
   releaseHtml = await inlineStyles(releaseHtml, browserDir);
   releaseHtml = await inlineScripts(releaseHtml, browserDir);
   releaseHtml = await inlineImages(releaseHtml, browserDir);
+  releaseHtml = await inlineAssetStringReferences(releaseHtml, browserDir);
   releaseHtml = withoutSourceMaps(releaseHtml);
 
   await rm(releaseDir, { recursive: true, force: true });
@@ -105,6 +106,25 @@ async function inlineImages(html, browserDir) {
     const assetPath = path.join(browserDir, src);
     const dataUrl = await toDataUrl(assetPath);
     return `<img${pre}src="${dataUrl}"${post}>`;
+  });
+}
+
+async function inlineAssetStringReferences(html, browserDir) {
+  const assetPattern = /(["'])(assets\/[^"'?#]+\.(?:png|jpe?g|gif|svg|webp|ico))\1/gi;
+  const cache = new Map();
+
+  return replaceAsync(html, assetPattern, async (match, quote, assetPath) => {
+    if (!isLocalAsset(assetPath)) {
+      return match;
+    }
+
+    let dataUrl = cache.get(assetPath);
+    if (!dataUrl) {
+      dataUrl = await toDataUrl(path.join(browserDir, assetPath));
+      cache.set(assetPath, dataUrl);
+    }
+
+    return `${quote}${dataUrl}${quote}`;
   });
 }
 
