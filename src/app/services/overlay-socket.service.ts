@@ -63,6 +63,8 @@ export class OverlaySocketService {
       window.clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+
+    this.reconnectScheduled = false;
   }
 
   private cleanupSocket(): void {
@@ -86,12 +88,8 @@ export class OverlaySocketService {
       return;
     }
 
-    if (this.reconnectAttempts >= 10) {
-      return;
-    }
-
     this.reconnectScheduled = true;
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 15000);
     this.reconnectAttempts++;
 
     if (this.reconnectTimeout !== null) {
