@@ -24,6 +24,7 @@ export class OverlayConfigService {
 
     this.config = { ...this.config, ...this.readQueryParams() };
     this.config.scale = this.clampScale(Number.parseFloat(String(this.config.scale)));
+    this.config.profileScale = this.clampScale(Number.parseFloat(String(this.config.profileScale)));
     return this.getConfig();
   }
 
@@ -94,6 +95,7 @@ export class OverlayConfigService {
     params.set('customProxy', config.customProxy);
     params.set('layout', config.layout);
     params.set('scale', String(this.clampScale(config.scale)));
+    params.set('profileScale', String(this.clampScale(config.profileScale)));
     params.set('nameSource', config.nameSource);
     params.set('avatarSource', config.avatarSource);
     params.set('showBL', String(config.showBL));
@@ -110,6 +112,7 @@ export class OverlayConfigService {
     params.set('showBsr', String(config.showBsr));
     params.set('showMapRatings', String(config.showMapRatings));
     params.set('showSSStars', String(config.showSSStars));
+    params.set('showPpPredictor', String(config.showPpPredictor));
     params.set('showProgress', String(config.showProgress));
     params.set('showHp', String(config.showHp));
     params.set('showStats', String(config.showStats));
@@ -139,6 +142,7 @@ export class OverlayConfigService {
     const customProxy = params.get('customProxy');
     const layout = params.get('layout');
     const scale = params.get('scale');
+    const profileScale = params.get('profileScale');
     const nameSource = params.get('nameSource');
     const avatarSource = params.get('avatarSource');
     const blId = params.get('blId');
@@ -168,6 +172,13 @@ export class OverlayConfigService {
       const parsedScale = Number.parseFloat(scale);
       if (Number.isFinite(parsedScale)) {
         partial.scale = this.clampScale(parsedScale);
+      }
+    }
+
+    if (profileScale !== null) {
+      const parsedProfileScale = Number.parseFloat(profileScale);
+      if (Number.isFinite(parsedProfileScale)) {
+        partial.profileScale = this.clampScale(parsedProfileScale);
       }
     }
 
@@ -201,6 +212,7 @@ export class OverlayConfigService {
     this.assignBooleanParam(params, partial, 'showBsr');
     this.assignBooleanParam(params, partial, 'showMapRatings');
     this.assignBooleanParam(params, partial, 'showSSStars');
+    this.assignBooleanParam(params, partial, 'showPpPredictor');
     this.assignBooleanParam(params, partial, 'showProgress');
     this.assignBooleanParam(params, partial, 'showHp');
     this.assignBooleanParam(params, partial, 'showStats');
@@ -229,6 +241,7 @@ export class OverlayConfigService {
       | 'showBsr'
       | 'showMapRatings'
       | 'showSSStars'
+      | 'showPpPredictor'
       | 'showProgress'
       | 'showHp'
       | 'showStats'

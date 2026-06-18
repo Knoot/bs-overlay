@@ -78,7 +78,7 @@ http://localhost:8080
 Пример:
 
 ```text
-http://localhost:8080/?lang=en&layout=top-right&scale=1.2&ws=ws://127.0.0.1:2947/socket&showBL=true&blId=76561198029377687
+http://localhost:8080/?lang=en&layout=top-right&scale=1.2&profileScale=1.5&ws=ws://127.0.0.1:2947/socket&showBL=true&blId=76561198029377687
 ```
 
 Кнопка `APPLY & RECONNECT`:

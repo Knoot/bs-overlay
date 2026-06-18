@@ -1,6 +1,15 @@
 import { Injectable } from '@angular/core';
 import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
-import { BeatleaderMapRatings, MapInfoPayload, OverlayConfig, ScoreEventPayload, ViewMode, WsPayload } from '../models/overlay.models';
+import {
+  BeatleaderMapRatings,
+  MapInfoPayload,
+  OverlayConfig,
+  PpPredictorEntry,
+  PpPredictorPayload,
+  ScoreEventPayload,
+  ViewMode,
+  WsPayload
+} from '../models/overlay.models';
 import { BeatleaderService } from './beatleader.service';
 import { OverlayConfigService } from './overlay-config.service';
 import { OverlayDomService } from './overlay-dom.service';
@@ -27,6 +36,8 @@ export class OverlayFacadeService {
   private currentMapMode = '';
   private lastMapRatingsKey = '';
   private lastSsStarsKey = '';
+  private ppPredictorSocket: WebSocket | null = null;
+  private ppPredictorReconnectTimeout: number | null = null;
   private readonly mapRatingsCache = new Map<string, BeatleaderMapRatings | null>();
   private readonly ssStarsCache = new Map<string, number | null>();
   private readonly keydownHandler = (event: KeyboardEvent) => {
@@ -58,7 +69,9 @@ export class OverlayFacadeService {
     this.dom.applyPanelBackgrounds(this.config);
     this.dom.resetMapRatings();
     this.dom.resetSSStars();
+    this.dom.resetPpPredictor();
     this.connectWS();
+    this.connectPpPredictor();
     if (this.shouldShowBeatLeaderMenu()) {
       void this.fetchBL(true);
     }
@@ -78,6 +91,7 @@ export class OverlayFacadeService {
     document.removeEventListener('keydown', this.keydownHandler);
     this.stopProgressLoop();
     this.socket.destroy();
+    this.disconnectPpPredictor();
 
     if (this.blRefreshInterval !== null) {
       window.clearInterval(this.blRefreshInterval);
@@ -125,6 +139,13 @@ export class OverlayFacadeService {
 
     if (wsChanged) {
       this.connectWS();
+    }
+
+    if (this.config.showPpPredictor && !previousConfig.showPpPredictor) {
+      this.connectPpPredictor();
+    } else if (!this.config.showPpPredictor && previousConfig.showPpPredictor) {
+      this.disconnectPpPredictor();
+      this.dom.resetPpPredictor();
     }
 
     if (beatLeaderChanged && this.shouldShowBeatLeaderMenu()) {
@@ -179,6 +200,137 @@ export class OverlayFacadeService {
         this.dom.showDebug(`WS Lost. Reconnecting...${suffix}`, this.config.showDebugUI);
       }
     });
+  }
+
+  private connectPpPredictor(): void {
+    if (!this.config.showPpPredictor) {
+      return;
+    }
+
+    this.disconnectPpPredictor();
+
+    const url = this.getPpPredictorUrl();
+    let socket: WebSocket;
+
+    try {
+      socket = new WebSocket(url);
+    } catch (error) {
+      this.schedulePpPredictorReconnect();
+      this.dom.showDebug(`PP Predictor error: ${this.describeError(error)}`, this.config.showDebugUI);
+      return;
+    }
+
+    this.ppPredictorSocket = socket;
+
+    socket.onopen = () => {
+      if (this.ppPredictorSocket !== socket) return;
+      this.dom.showDebug('PP Predictor connected', this.config.showDebugUI);
+    };
+
+    socket.onmessage = (event) => {
+      if (this.ppPredictorSocket !== socket) return;
+
+      try {
+        this.handlePpPredictorMessage(JSON.parse(event.data) as PpPredictorPayload);
+      } catch (error) {
+        this.dom.showDebug(`PP Predictor handler error: ${this.describeError(error)}`, this.config.showDebugUI);
+      }
+    };
+
+    const disconnectHandler = (eventOrError: Event) => {
+      if (this.ppPredictorSocket !== socket) return;
+      this.ppPredictorSocket = null;
+      this.dom.resetPpPredictor();
+      this.dom.applyModules(this.config);
+      this.schedulePpPredictorReconnect();
+      this.dom.showDebug(`PP Predictor disconnected: ${this.describeError(eventOrError)}`, this.config.showDebugUI);
+    };
+
+    socket.onclose = disconnectHandler;
+    socket.onerror = disconnectHandler;
+  }
+
+  private disconnectPpPredictor(): void {
+    if (this.ppPredictorReconnectTimeout !== null) {
+      window.clearTimeout(this.ppPredictorReconnectTimeout);
+      this.ppPredictorReconnectTimeout = null;
+    }
+
+    if (!this.ppPredictorSocket) {
+      return;
+    }
+
+    try {
+      this.ppPredictorSocket.onopen = null;
+      this.ppPredictorSocket.onmessage = null;
+      this.ppPredictorSocket.onclose = null;
+      this.ppPredictorSocket.onerror = null;
+      this.ppPredictorSocket.close();
+    } catch {
+      // Ignore cleanup errors during settings changes.
+    }
+
+    this.ppPredictorSocket = null;
+  }
+
+  private schedulePpPredictorReconnect(): void {
+    if (!this.config.showPpPredictor || this.ppPredictorReconnectTimeout !== null) {
+      return;
+    }
+
+    this.ppPredictorReconnectTimeout = window.setTimeout(() => {
+      this.ppPredictorReconnectTimeout = null;
+      this.connectPpPredictor();
+    }, 3000);
+  }
+
+  private handlePpPredictorMessage(data: PpPredictorPayload): void {
+    switch (data.messageType) {
+      case 'OnGameplayInfoChanged':
+        this.renderPpPredictorPayload(data.payload);
+        break;
+      case 'OnSongFinished':
+        this.dom.resetPpPredictor();
+        this.dom.applyModules(this.config);
+        break;
+      case 'OnSongStarted':
+      case 'OnFirstNoteHit':
+        break;
+      default:
+        break;
+    }
+  }
+
+  private renderPpPredictorPayload(entries: PpPredictorEntry[] | undefined): void {
+    if (!Array.isArray(entries)) {
+      this.dom.resetPpPredictor();
+      this.dom.applyModules(this.config);
+      return;
+    }
+
+    this.dom.renderPpPredictor(
+      {
+        beatleader: this.findPpPredictorValue(entries, 'beatleader'),
+        scoresaber: this.findPpPredictorValue(entries, 'scoresaber')
+      },
+      this.config
+    );
+    this.dom.applyModules(this.config);
+  }
+
+  private findPpPredictorValue(entries: PpPredictorEntry[], leaderboardName: 'beatleader' | 'scoresaber'): number | null {
+    const entry = entries.find((item) => item.isRanked && this.normalizeLeaderboardName(item.leaderboardName) === leaderboardName);
+    const pp = Number(entry?.pp);
+    return Number.isFinite(pp) ? pp : null;
+  }
+
+  private normalizeLeaderboardName(value: string | undefined): string {
+    return String(value ?? '').toLowerCase().replace(/\s+/g, '');
+  }
+
+  private getPpPredictorUrl(): string {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${protocol}://localhost:6558/socket`;
   }
 
   private handleWsMessage(data: WsPayload): void {

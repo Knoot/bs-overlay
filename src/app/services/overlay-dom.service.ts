@@ -84,11 +84,17 @@ export class OverlayDomService {
       rankNextRegionRow: this.mustGet('rank-next-region-row'),
       rankNextRegion: this.mustGet('rank-next-region'),
       ssMapStars: this.mustGet('ss-map-stars'),
+      ppPredictor: this.mustGet('pp-predictor'),
+      ppPredictorBlItem: this.mustGet('pp-predictor-bl-item'),
+      ppPredictorBl: this.mustGet('pp-predictor-bl'),
+      ppPredictorSsItem: this.mustGet('pp-predictor-ss-item'),
+      ppPredictorSs: this.mustGet('pp-predictor-ss'),
       // blNextFriendsRow: this.mustGet('bl-next-friends-row'),
       // blNextFriends: this.mustGet('bl-next-friends'),
       inputWs: this.mustGet('inp-ws') as HTMLInputElement,
       inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
       inputScale: this.mustGet('inp-scale') as HTMLInputElement,
+      inputProfileScale: this.mustGet('inp-profile-scale') as HTMLInputElement,
       inputBl: this.mustGet('inp-bl') as HTMLInputElement,
       inputSs: this.mustGet('inp-ss') as HTMLInputElement,
       inputNameSource: this.mustGet('inp-name-source') as HTMLSelectElement,
@@ -108,6 +114,7 @@ export class OverlayDomService {
       inputShowBsr: this.mustGet('inp-show-bsr') as HTMLInputElement,
       inputShowMapRatings: this.mustGet('inp-show-map-ratings') as HTMLInputElement,
       inputShowSsStars: this.mustGet('inp-show-ss-stars') as HTMLInputElement,
+      inputShowPpPredictor: this.mustGet('inp-show-pp-predictor') as HTMLInputElement,
       inputShowProgress: this.mustGet('inp-show-progress') as HTMLInputElement,
       inputShowHp: this.mustGet('inp-show-hp') as HTMLInputElement,
       inputShowStats: this.mustGet('inp-show-stats') as HTMLInputElement,
@@ -173,6 +180,7 @@ export class OverlayDomService {
     this.elements.inputWs.value = config.ws;
     this.elements.inputTheme.value = config.theme;
     this.elements.inputScale.value = String(config.scale);
+    this.elements.inputProfileScale.value = String(config.profileScale);
     this.elements.inputBl.value = config.blId;
     this.elements.inputSs.value = config.ssId;
     this.elements.inputNameSource.value = config.nameSource;
@@ -192,6 +200,7 @@ export class OverlayDomService {
     this.elements.inputShowBsr.checked = config.showBsr !== false;
     this.elements.inputShowMapRatings.checked = config.showMapRatings !== false;
     this.elements.inputShowSsStars.checked = config.showSSStars === true;
+    this.elements.inputShowPpPredictor.checked = config.showPpPredictor === true;
     this.elements.inputShowProgress.checked = config.showProgress !== false;
     this.elements.inputShowHp.checked = config.showHp !== false;
     this.elements.inputShowStats.checked = config.showStats !== false;
@@ -215,6 +224,7 @@ export class OverlayDomService {
       ws: this.elements.inputWs.value.trim() || 'ws://127.0.0.1:2947/socket',
       customProxy: this.elements.inputCustomProxy.value.trim(),
       scale: this.configService.clampScale(Number.parseFloat(this.elements.inputScale.value)),
+      profileScale: this.configService.clampScale(Number.parseFloat(this.elements.inputProfileScale.value)),
       blId: this.elements.inputBl.value.trim(),
       ssId: this.elements.inputSs.value.trim(),
       nameSource: this.elements.inputNameSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
@@ -234,6 +244,7 @@ export class OverlayDomService {
       showBsr: this.elements.inputShowBsr.checked,
       showMapRatings: this.elements.inputShowMapRatings.checked,
       showSSStars: this.elements.inputShowSsStars.checked,
+      showPpPredictor: this.elements.inputShowPpPredictor.checked,
       showProgress: this.elements.inputShowProgress.checked,
       showHp: this.elements.inputShowHp.checked,
       showStats: this.elements.inputShowStats.checked,
@@ -257,7 +268,7 @@ export class OverlayDomService {
     const translateX = horizontal === 'center' ? '-50%' : '0';
     const translateY = '0';
     const transformParts = [`translate(${translateX}, ${translateY})`, `scale(${config.scale})`];
-    const middleTop = this.getMiddleAnchorTop(config.scale);
+    const middleTop = this.getMiddleAnchorTop(config);
 
     this.elements.app.style.transformOrigin = `${horizontal} ${vertical === 'middle' ? 'center' : vertical}`;
     this.elements.app.style.transform = transformParts.join(' ');
@@ -284,12 +295,27 @@ export class OverlayDomService {
     this.elements.bsrLine.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
     this.elements.hpFill.style.marginLeft = '0';
     this.elements.progFill.style.marginLeft = '0';
+    this.applyProfileScale(config, horizontal, vertical);
+  }
+
+  private applyProfileScale(
+    config: OverlayConfig,
+    horizontal: 'left' | 'center' | 'right',
+    vertical: 'top' | 'middle' | 'bottom'
+  ): void {
+    const originY = vertical === 'middle' ? 'center' : vertical;
+
+    this.elements.rankWrapper.style.transform = '';
+    this.elements.rankWrapper.style.transformOrigin = '';
+    this.elements.menuOverlay.style.transform = `scale(${config.profileScale})`;
+    this.elements.menuOverlay.style.transformOrigin = `${horizontal} ${originY}`;
   }
 
   applyModules(config: OverlayConfig): void {
     const showBlRatings = config.showMapRatings && this.elements.mapRatings.dataset['blState'] === 'ready';
     const showSsStars = config.showSSStars && this.elements.mapRatings.dataset['ssState'] === 'ready';
     const showMapRatings = showBlRatings || showSsStars;
+    const showPpPredictor = config.showPpPredictor && this.elements.ppPredictor.dataset['state'] === 'ready';
     const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
     const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
     this.elements.coverWrapper.style.display = config.showCover ? 'flex' : 'none';
@@ -306,8 +332,9 @@ export class OverlayDomService {
     this.elements.artist.style.display = config.showArtist ? '' : 'none';
     this.elements.metaLine.style.display = config.showMeta ? '' : 'none';
     this.elements.bsrLine.style.display = config.showBsr ? '' : 'none';
+    this.updatePpPredictorVisibility(config);
 
-    const showAnyText = config.showTitle || config.showArtist || config.showMeta || config.showBsr || showMapRatings;
+    const showAnyText = config.showTitle || config.showArtist || config.showMeta || config.showBsr || showMapRatings || showPpPredictor;
     this.elements.textBlock.style.display = showAnyText ? 'flex' : 'none';
 
     const showHeader = config.showCover || showAnyText;
@@ -370,6 +397,7 @@ export class OverlayDomService {
     this.setDefaultTime();
     this.resetMapRatings();
     this.resetSSStars();
+    this.resetPpPredictor();
   }
 
   setViewMode(mode: ViewMode, showBL: boolean): void {
@@ -571,6 +599,32 @@ export class OverlayDomService {
     this.updateMapRatingsVisibility(config);
   }
 
+  resetPpPredictor(): void {
+    this.elements.ppPredictor.dataset['state'] = 'empty';
+    this.elements.ppPredictorBl.textContent = '-- pp';
+    this.elements.ppPredictorSs.textContent = '-- pp';
+    this.elements.ppPredictorBlItem.style.display = 'none';
+    this.elements.ppPredictorSsItem.style.display = 'none';
+    this.updatePpPredictorVisibility(this.configService.getConfig());
+  }
+
+  renderPpPredictor(values: { beatleader: number | null; scoresaber: number | null }, config: OverlayConfig): void {
+    const hasBeatLeader = typeof values.beatleader === 'number' && Number.isFinite(values.beatleader);
+    const hasScoreSaber = typeof values.scoresaber === 'number' && Number.isFinite(values.scoresaber);
+
+    if (!hasBeatLeader && !hasScoreSaber) {
+      this.resetPpPredictor();
+      return;
+    }
+
+    this.elements.ppPredictor.dataset['state'] = 'ready';
+    this.elements.ppPredictorBl.textContent = hasBeatLeader ? this.formatPredictedPpValue(values.beatleader) : '-- pp';
+    this.elements.ppPredictorSs.textContent = hasScoreSaber ? this.formatPredictedPpValue(values.scoresaber) : '-- pp';
+    this.elements.ppPredictorBlItem.style.display = hasBeatLeader ? 'inline-flex' : 'none';
+    this.elements.ppPredictorSsItem.style.display = hasScoreSaber ? 'inline-flex' : 'none';
+    this.updatePpPredictorVisibility(config);
+  }
+
   updateAccuracy(accuracy: number, grade: string, color: string): void {
     this.elements.accNum.textContent = `${(accuracy * 100).toFixed(1)}%`;
     this.elements.accGrade.textContent = grade;
@@ -731,6 +785,14 @@ export class OverlayDomService {
     return typeof value === 'number' ? `${Math.round(value).toLocaleString()} pp` : '-- pp';
   }
 
+  private formatPredictedPpValue(value: number | null): string {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return '-- pp';
+    }
+
+    return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pp`;
+  }
+
   private mustGet(id: string): HTMLElement {
     const element = document.getElementById(id);
     if (!element) throw new Error(`Required element #${id} was not found`);
@@ -774,6 +836,11 @@ export class OverlayDomService {
     this.elements.mapRatings.style.display = showBlRatings || showSsStars ? 'flex' : 'none';
   }
 
+  private updatePpPredictorVisibility(config: OverlayConfig): void {
+    const showPpPredictor = config.showPpPredictor && this.elements.ppPredictor.dataset['state'] === 'ready';
+    this.elements.ppPredictor.style.display = showPpPredictor ? 'flex' : 'none';
+  }
+
   private getHorizontalAlignment(layout: OverlayConfig['layout']): 'left' | 'center' | 'right' {
     if (layout.endsWith('left')) {
       return 'left';
@@ -798,21 +865,21 @@ export class OverlayDomService {
     return 'middle';
   }
 
-  private getMiddleAnchorTop(scale: number): string {
-    const referenceHeight = this.getReferenceOverlayHeight();
-    const scaledHalfHeight = (referenceHeight * scale) / 2;
+  private getMiddleAnchorTop(config: OverlayConfig): string {
+    const referenceHeight = this.getReferenceOverlayHeight(config);
+    const scaledHalfHeight = (referenceHeight * config.scale) / 2;
     return `calc(50% - ${scaledHalfHeight}px)`;
   }
 
-  private getReferenceOverlayHeight(): number {
+  private getReferenceOverlayHeight(config: OverlayConfig): number {
     if (this.elements.playingOverlay.classList.contains('active')) {
       return this.elements.playingOverlay.offsetHeight;
     }
 
     if (this.elements.menuOverlay.classList.contains('active')) {
-      return this.elements.menuOverlay.offsetHeight;
+      return this.elements.menuOverlay.offsetHeight * config.profileScale;
     }
 
-    return Math.max(this.elements.playingOverlay.offsetHeight, this.elements.menuOverlay.offsetHeight);
+    return Math.max(this.elements.playingOverlay.offsetHeight, this.elements.menuOverlay.offsetHeight * config.profileScale);
   }
 }

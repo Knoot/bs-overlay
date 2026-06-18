@@ -19,6 +19,7 @@ export interface OverlayConfig {
   customProxy: string;
   layout: Layout;
   scale: number;
+  profileScale: number;
   blId: string;
   ssId: string;
   nameSource: RankIdentitySource;
@@ -41,6 +42,7 @@ export interface OverlayConfig {
   showBsr: boolean;
   showMapRatings: boolean;
   showSSStars: boolean;
+  showPpPredictor: boolean;
   showProgress: boolean;
   showHp: boolean;
   showStats: boolean;
@@ -198,11 +200,17 @@ export interface OverlayElements {
   rankNextRegionRow: HTMLElement;
   rankNextRegion: HTMLElement;
   ssMapStars: HTMLElement;
+  ppPredictor: HTMLElement;
+  ppPredictorBlItem: HTMLElement;
+  ppPredictorBl: HTMLElement;
+  ppPredictorSsItem: HTMLElement;
+  ppPredictorSs: HTMLElement;
   // blNextFriendsRow: HTMLElement;
   // blNextFriends: HTMLElement;
   inputWs: HTMLInputElement;
   inputTheme: HTMLSelectElement;
   inputScale: HTMLInputElement;
+  inputProfileScale: HTMLInputElement;
   inputBl: HTMLInputElement;
   inputSs: HTMLInputElement;
   inputNameSource: HTMLSelectElement;
@@ -222,6 +230,7 @@ export interface OverlayElements {
   inputShowBsr: HTMLInputElement;
   inputShowMapRatings: HTMLInputElement;
   inputShowSsStars: HTMLInputElement;
+  inputShowPpPredictor: HTMLInputElement;
   inputShowProgress: HTMLInputElement;
   inputShowHp: HTMLInputElement;
   inputShowStats: HTMLInputElement;
@@ -263,4 +272,20 @@ export interface SocketCallbacks {
   onOpen: () => void;
   onMessage: (payload: WsPayload) => void;
   onDisconnect: (error?: unknown) => void;
+}
+
+export interface PpPredictorEntry {
+  leaderboardName?: string;
+  pp?: number;
+  ppGain?: number;
+  personalBest?: number | string;
+  isRanked?: boolean;
+  maxPP?: number;
+  ppSuffix?: string;
+  iconPath?: string;
+}
+
+export interface PpPredictorPayload {
+  messageType?: string;
+  payload?: PpPredictorEntry[];
 }
