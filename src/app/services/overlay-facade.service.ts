@@ -189,11 +189,7 @@ export class OverlayFacadeService {
       onMessage: (payload) => this.handleWsMessage(payload),
       onDisconnect: (error) => {
         const showRankMenu = this.shouldShowRankMenu();
-        this.isGamePlaying = false;
-        this.stopProgressLoop();
-        this.lastKnownSongTime = 0;
-        this.lastTimeAnchorMs = 0;
-        this.mapTimeMultiplier = 1;
+        this.resetMapOverlayState();
         this.dom.setViewMode('menu', showRankMenu);
         this.dom.setAppVisible(showRankMenu);
         const suffix = error ? ` (${this.describeError(error)})` : '';
@@ -567,6 +563,24 @@ export class OverlayFacadeService {
     if (this.shouldShowScoreSaberMenu()) {
       void this.fetchSS();
     }
+  }
+
+  private resetMapOverlayState(): void {
+    this.isGamePlaying = false;
+    this.stopProgressLoop();
+    this.duration = 0;
+    this.lastKnownSongTime = 0;
+    this.lastTimeAnchorMs = 0;
+    this.mapTimeMultiplier = 1;
+    this.currentMapHash = '';
+    this.currentMapDifficulty = '';
+    this.currentMapMode = '';
+    this.lastMapRatingsKey = '';
+    this.lastSsStarsKey = '';
+    this.dom.resetGameOverlay(this.config.lang);
+    this.dom.resetMapRatings();
+    this.dom.resetSSStars();
+    this.dom.applyModules(this.config);
   }
 
   private shouldShowBeatLeaderMenu(): boolean {
