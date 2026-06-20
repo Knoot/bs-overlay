@@ -106,6 +106,7 @@ export class OverlayDomService {
       inputShowBlNextRegion: this.mustGet('inp-show-bl-next-region') as HTMLInputElement,
       // inputShowBlNextFriends: this.mustGet('inp-show-bl-next-friends') as HTMLInputElement,
       inputShowDebug: this.mustGet('inp-show-debug') as HTMLInputElement,
+      inputShowProfileAlways: this.mustGet('inp-show-profile-always') as HTMLInputElement,
       inputGlowAvatar: this.mustGet('inp-glow-avatar') as HTMLInputElement,
       inputShowCover: this.mustGet('inp-show-cover') as HTMLInputElement,
       inputShowTitle: this.mustGet('inp-show-title') as HTMLInputElement,
@@ -192,6 +193,7 @@ export class OverlayDomService {
     this.elements.inputShowBlNextRegion.checked = config.showBLNextRegion !== false;
     // this.elements.inputShowBlNextFriends.checked = config.showBLNextFriends !== false;
     this.elements.inputShowDebug.checked = config.showDebugUI !== false;
+    this.elements.inputShowProfileAlways.checked = config.showProfileAlways !== false;
     this.elements.inputGlowAvatar.checked = config.glowAvatar !== false;
     this.elements.inputShowCover.checked = config.showCover !== false;
     this.elements.inputShowTitle.checked = config.showTitle !== false;
@@ -236,6 +238,7 @@ export class OverlayDomService {
       // `bl-next-friends` is temporarily disabled; preserve stored config as-is.
       showBLNextFriends: currentConfig.showBLNextFriends,
       showDebugUI: this.elements.inputShowDebug.checked,
+      showProfileAlways: this.elements.inputShowProfileAlways.checked,
       glowAvatar: this.elements.inputGlowAvatar.checked,
       showCover: this.elements.inputShowCover.checked,
       showTitle: this.elements.inputShowTitle.checked,

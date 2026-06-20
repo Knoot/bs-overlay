@@ -34,6 +34,7 @@ export interface OverlayConfig {
   showBLNextRegion: boolean;
   showBLNextFriends: boolean;
   showDebugUI: boolean;
+  showProfileAlways: boolean;
   glowAvatar: boolean;
   showCover: boolean;
   showTitle: boolean;
@@ -222,6 +223,7 @@ export interface OverlayElements {
   inputShowBlNextRegion: HTMLInputElement;
   // inputShowBlNextFriends: HTMLInputElement;
   inputShowDebug: HTMLInputElement;
+  inputShowProfileAlways: HTMLInputElement;
   inputGlowAvatar: HTMLInputElement;
   inputShowCover: HTMLInputElement;
   inputShowTitle: HTMLInputElement;

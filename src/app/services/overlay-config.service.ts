@@ -104,6 +104,7 @@ export class OverlayConfigService {
     params.set('showBLNextRegion', String(config.showBLNextRegion));
     params.set('showBLNextFriends', String(config.showBLNextFriends));
     params.set('showDebugUI', String(config.showDebugUI));
+    params.set('showProfileAlways', String(config.showProfileAlways));
     params.set('glowAvatar', String(config.glowAvatar));
     params.set('showCover', String(config.showCover));
     params.set('showTitle', String(config.showTitle));
@@ -204,6 +205,7 @@ export class OverlayConfigService {
     this.assignBooleanParam(params, partial, 'showBLNextRegion');
     this.assignBooleanParam(params, partial, 'showBLNextFriends');
     this.assignBooleanParam(params, partial, 'showDebugUI');
+    this.assignBooleanParam(params, partial, 'showProfileAlways');
     this.assignBooleanParam(params, partial, 'glowAvatar');
     this.assignBooleanParam(params, partial, 'showCover');
     this.assignBooleanParam(params, partial, 'showTitle');
@@ -233,6 +235,7 @@ export class OverlayConfigService {
       | 'showBLNextRegion'
       | 'showBLNextFriends'
       | 'showDebugUI'
+      | 'showProfileAlways'
       | 'glowAvatar'
       | 'showCover'
       | 'showTitle'

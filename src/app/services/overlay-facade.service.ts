@@ -36,6 +36,7 @@ export class OverlayFacadeService {
   private currentMapMode = '';
   private lastMapRatingsKey = '';
   private lastSsStarsKey = '';
+  private isWsConnected = false;
   private ppPredictorSocket: WebSocket | null = null;
   private ppPredictorReconnectTimeout: number | null = null;
   private readonly mapRatingsCache = new Map<string, BeatleaderMapRatings | null>();
@@ -161,10 +162,17 @@ export class OverlayFacadeService {
     if (scoreSaberChanged || (!previousConfig.showSSStars && this.config.showSSStars)) {
       void this.refreshCurrentScoreSaberStars(false);
     }
+
+    if (!this.isGamePlaying) {
+      this.dom.setViewMode('menu', this.shouldShowRankMenuNow());
+      this.dom.setAppVisible(this.shouldShowRankMenuNow());
+      this.dom.applyLayout(this.config);
+    }
   }
 
   private connectWS(): void {
-    const showRankMenu = this.shouldShowRankMenu();
+    this.isWsConnected = false;
+    const showRankMenu = this.shouldShowRankMenuNow();
     this.isGamePlaying = false;
     this.duration = 0;
     this.mapTimeMultiplier = 1;
@@ -182,13 +190,14 @@ export class OverlayFacadeService {
 
     this.socket.connect(this.config.ws, {
       onOpen: () => {
+        this.isWsConnected = true;
         this.dom.showDebug('WebSocket Connected', this.config.showDebugUI);
-        this.dom.setAppVisible(true);
         this.setMode('menu');
       },
       onMessage: (payload) => this.handleWsMessage(payload),
       onDisconnect: (error) => {
-        const showRankMenu = this.shouldShowRankMenu();
+        this.isWsConnected = false;
+        const showRankMenu = this.shouldShowRankMenuNow();
         this.resetMapOverlayState();
         this.dom.setViewMode('menu', showRankMenu);
         this.dom.setAppVisible(showRankMenu);
@@ -541,12 +550,13 @@ export class OverlayFacadeService {
   }
 
   private setMode(mode: ViewMode): void {
-    const showRankMenu = this.shouldShowRankMenu();
+    const showRankMenu = this.shouldShowRankMenuNow();
 
     if (mode === 'playing') {
       this.isGamePlaying = true;
       this.lastTimeAnchorMs = performance.now();
       this.dom.setViewMode('playing', showRankMenu);
+      this.dom.setAppVisible(true);
       this.dom.applyLayout(this.config);
       this.startProgressLoop();
       return;
@@ -555,6 +565,7 @@ export class OverlayFacadeService {
     this.isGamePlaying = false;
     this.stopProgressLoop();
     this.dom.setViewMode('menu', showRankMenu);
+    this.dom.setAppVisible(showRankMenu);
     this.dom.applyLayout(this.config);
 
     if (this.shouldShowBeatLeaderMenu()) {
@@ -593,6 +604,10 @@ export class OverlayFacadeService {
 
   private shouldShowRankMenu(): boolean {
     return this.shouldShowBeatLeaderMenu() || this.shouldShowScoreSaberMenu();
+  }
+
+  private shouldShowRankMenuNow(): boolean {
+    return this.shouldShowRankMenu() && (this.config.showProfileAlways !== false || this.isWsConnected);
   }
 
   private syncSongTime(timeSec: number): void {
