@@ -5,11 +5,20 @@ export const PLACEHOLDER_COVER =
 
 export const STORAGE_KEY = 'bsCyberConfig';
 
+export const DEFAULT_PROXY_PREFIXES = [
+  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://thingproxy.freeboard.io/fetch/'
+];
+
+export const DEFAULT_PROXY_CONFIG = DEFAULT_PROXY_PREFIXES.join(', ');
+
 export const DEFAULT_CONFIG: OverlayConfig = {
   lang: 'ru',
   theme: 'cyberpunk',
   ws: 'ws://127.0.0.1:2947/socket',
-  customProxy: '',
+  customProxy: DEFAULT_PROXY_CONFIG,
   layout: 'top-left',
   scale: 1,
   profileScale: 1.5,
@@ -45,20 +54,14 @@ export const DEFAULT_CONFIG: OverlayConfig = {
   showBLBg: true
 };
 
-export const PROXIES = [
-  '',
-  'https://api.codetabs.com/v1/proxy?quest=',
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://thingproxy.freeboard.io/fetch/'
-];
-
 export const I18N: Record<Lang, Record<string, string>> = {
   en: {
     sysSetup: 'SYSTEM SETUP [F2]',
     langLabel: 'Language / Язык',
     themeLabel: 'Theme',
-    customProxyLabel: 'Custom Proxy Prefix',
+    customProxyLabel: 'Proxy Prefixes',
+    restoreProxyBtn: 'RESTORE',
+    proxyHelp: 'Use commas to separate multiple proxy prefixes.',
     tabGeneral: 'General',
     tabBeatLeader: 'BL/SS',
     tabSongOverlay: 'Song Overlay',
@@ -73,7 +76,7 @@ export const I18N: Record<Lang, Record<string, string>> = {
     sourceScoreSaber: 'ScoreSaber',
     blPlaceholder: 'Example: 76561198029377687',
     ssPlaceholder: 'Example: 76561198059961776',
-    customProxyPlaceholder: 'Example: https://my-proxy.example/?url=',
+    customProxyPlaceholder: 'Comma-separated proxy prefixes',
     modulesLabel: 'Display Modules (On/Off)',
     modBl: 'BeatLeader Menu',
     modSs: 'ScoreSaber Menu',
@@ -107,7 +110,9 @@ export const I18N: Record<Lang, Record<string, string>> = {
     sysSetup: 'СИСТЕМНЫЕ НАСТРОЙКИ [F2]',
     langLabel: 'Язык / Language',
     themeLabel: 'Тема',
-    customProxyLabel: 'Свой Proxy Prefix',
+    customProxyLabel: 'Proxy Prefixes',
+    restoreProxyBtn: 'ВОССТАНОВИТЬ',
+    proxyHelp: 'Адреса прокси указываются через запятую.',
     tabGeneral: 'Основные',
     tabBeatLeader: 'BL/SS',
     tabSongOverlay: 'Song Overlay',
@@ -122,7 +127,7 @@ export const I18N: Record<Lang, Record<string, string>> = {
     sourceScoreSaber: 'ScoreSaber',
     blPlaceholder: 'Например: 76561198029377687',
     ssPlaceholder: 'Например: 76561198059961776',
-    customProxyPlaceholder: 'Например: https://my-proxy.example/?url=',
+    customProxyPlaceholder: 'Прокси-префиксы через запятую',
     modulesLabel: 'Модули отображения (Вкл/Выкл)',
     modBl: 'BeatLeader Меню',
     modSs: 'ScoreSaber Меню',

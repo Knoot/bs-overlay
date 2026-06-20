@@ -35,6 +35,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.overlayFacade.saveSettings();
   }
 
+  restoreProxySettings(): void {
+    this.overlayFacade.restoreProxySettings();
+  }
+
   setSettingsTab(tab: 'general' | 'beatleader' | 'song'): void {
     this.activeSettingsTab = tab;
   }

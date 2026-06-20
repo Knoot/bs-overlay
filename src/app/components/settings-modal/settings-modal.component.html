@@ -30,7 +30,11 @@
     </div>
     <div class="setting-row">
       <label style="font-size: 12px; color: #ccc;" data-i18n="customProxyLabel">Custom Proxy Prefix</label>
-      <input type="text" id="inp-custom-proxy" placeholder="https://my-proxy.example/?url=">
+      <div class="proxy-input-row">
+        <input type="text" id="inp-custom-proxy" placeholder="https://my-proxy.example/?url=">
+        <button type="button" class="proxy-restore-btn" (click)="restoreProxySettings()" data-i18n="restoreProxyBtn">RESTORE</button>
+      </div>
+      <div class="setting-help" data-i18n="proxyHelp">Use commas to separate multiple proxy prefixes.</div>
     </div>
     <div class="setting-row">
       <label style="font-size: 12px; color: #ccc;" data-i18n="modulesLabel">Display Modules</label>

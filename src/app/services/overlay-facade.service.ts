@@ -170,6 +170,10 @@ export class OverlayFacadeService {
     }
   }
 
+  restoreProxySettings(): void {
+    this.dom.restoreDefaultProxyConfig();
+  }
+
   private connectWS(): void {
     this.isWsConnected = false;
     const showRankMenu = this.shouldShowRankMenuNow();

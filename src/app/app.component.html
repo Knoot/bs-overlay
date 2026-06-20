@@ -6,6 +6,7 @@
 <app-settings-modal
   [activeSettingsTab]="activeSettingsTab"
   (save)="saveSettings()"
+  (restoreProxy)="restoreProxySettings()"
   (settingsTabChange)="setSettingsTab($event)"
 ></app-settings-modal>
 

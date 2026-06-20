@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { PROXIES } from '../constants/overlay.constants';
 import {
   BeatleaderMapRatings,
   BeatleaderFetchResult,
@@ -16,10 +15,10 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BeatleaderService {
   private currentProxyIdx = 0;
-  private customProxy = '';
+  private proxyPrefixes: string[] = [];
 
   setCustomProxy(proxyPrefix: string): void {
-    this.customProxy = proxyPrefix.trim();
+    this.proxyPrefixes = this.parseProxyPrefixes(proxyPrefix);
     this.currentProxyIdx = 0;
   }
 
@@ -391,13 +390,10 @@ export class BeatleaderService {
   ): Promise<unknown> {
     const allowProxyFallback = options?.allowProxyFallback !== false;
     const proxyPool = this.getProxyPool();
-    // BeatLeader API does not expose browser CORS headers for app origins like localhost/OBS,
-    // so direct fetches fail in the client and we intentionally start with proxy routes.
-    const shouldSkipDirectRequest = allowProxyFallback && originalUrl.startsWith('https://api.beatleader.com/');
     const attempts = allowProxyFallback
-      ? Array.from({ length: proxyPool.length }, (_, offset) => (this.currentProxyIdx + offset) % proxyPool.length).filter(
-          (index) => !(shouldSkipDirectRequest && proxyPool[index] === '')
-        )
+      ? proxyPool.length > 0
+        ? Array.from({ length: proxyPool.length }, (_, offset) => (this.currentProxyIdx + offset) % proxyPool.length)
+        : [-1]
       : [-1];
     let lastError: unknown = null;
 
@@ -435,7 +431,14 @@ export class BeatleaderService {
   }
 
   private getProxyPool(): string[] {
-    return this.customProxy ? [this.customProxy, ...PROXIES] : PROXIES;
+    return this.proxyPrefixes;
+  }
+
+  private parseProxyPrefixes(value: string): string[] {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   private extractSinglePlayerResponse(value: unknown): PlayerCandidate | null {

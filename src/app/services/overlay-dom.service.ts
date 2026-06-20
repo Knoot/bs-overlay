@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
+import { DEFAULT_PROXY_CONFIG, PLACEHOLDER_COVER } from '../constants/overlay.constants';
 import {
   BeatleaderMapRatings,
   BeatleaderPlayerOverlayDetails,
@@ -299,6 +299,10 @@ export class OverlayDomService {
     this.elements.hpFill.style.marginLeft = '0';
     this.elements.progFill.style.marginLeft = '0';
     this.applyProfileScale(config, horizontal, vertical);
+  }
+
+  restoreDefaultProxyConfig(): void {
+    this.elements.inputCustomProxy.value = DEFAULT_PROXY_CONFIG;
   }
 
   private applyProfileScale(

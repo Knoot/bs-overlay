@@ -13,6 +13,7 @@ export class SettingsModalComponent {
   activeRankServiceTab: 'bl' | 'ss' = 'bl';
 
   @Output() readonly save = new EventEmitter<void>();
+  @Output() readonly restoreProxy = new EventEmitter<void>();
   @Output() readonly settingsTabChange = new EventEmitter<'general' | 'beatleader' | 'song'>();
 
   setSettingsTab(tab: 'general' | 'beatleader' | 'song'): void {
@@ -25,5 +26,9 @@ export class SettingsModalComponent {
 
   saveSettings(): void {
     this.save.emit();
+  }
+
+  restoreProxySettings(): void {
+    this.restoreProxy.emit();
   }
 }

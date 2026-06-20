@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { PROXIES } from '../constants/overlay.constants';
 import {
   PlayerCandidate,
   ScoresaberFetchResult,
@@ -9,10 +8,10 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ScoresaberService {
   private currentProxyIdx = 0;
-  private customProxy = '';
+  private proxyPrefixes: string[] = [];
 
   setCustomProxy(proxyPrefix: string): void {
-    this.customProxy = proxyPrefix.trim();
+    this.proxyPrefixes = this.parseProxyPrefixes(proxyPrefix);
     this.currentProxyIdx = 0;
   }
 
@@ -173,12 +172,13 @@ export class ScoresaberService {
 
   private async fetchJSONWithProxyFallback(originalUrl: string): Promise<unknown> {
     const proxyPool = this.getProxyPool();
-    const attempts = Array.from({ length: proxyPool.length }, (_, offset) => (this.currentProxyIdx + offset) % proxyPool.length);
+    const attempts =
+      proxyPool.length > 0 ? Array.from({ length: proxyPool.length }, (_, offset) => (this.currentProxyIdx + offset) % proxyPool.length) : [-1];
     let lastError: unknown = null;
 
     for (let offset = 0; offset < attempts.length; offset++) {
       const idx = attempts[offset];
-      const proxy = proxyPool[idx];
+      const proxy = idx === -1 ? '' : proxyPool[idx];
       const targetUrl = proxy ? proxy + encodeURIComponent(originalUrl) : originalUrl;
 
       try {
@@ -194,7 +194,9 @@ export class ScoresaberService {
         }
 
         const json = await response.json();
-        this.currentProxyIdx = idx;
+        if (idx >= 0) {
+          this.currentProxyIdx = idx;
+        }
         return json;
       } catch (error) {
         lastError = error;
@@ -208,7 +210,14 @@ export class ScoresaberService {
   }
 
   private getProxyPool(): string[] {
-    return this.customProxy ? [this.customProxy, ...PROXIES] : PROXIES;
+    return this.proxyPrefixes;
+  }
+
+  private parseProxyPrefixes(value: string): string[] {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   private extractSinglePlayerResponse(value: unknown): PlayerCandidate | null {

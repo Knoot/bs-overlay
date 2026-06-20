@@ -386,6 +386,16 @@
   accent-color: var(--neon-cyan);
 }
 
+.proxy-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.proxy-input-row input {
+  min-width: 0;
+  flex: 1;
+}
+
 .setting-row button {
   background: transparent;
   color: var(--neon-cyan);
@@ -403,4 +413,18 @@
   background: var(--neon-cyan);
   color: #000;
   box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+.setting-row .proxy-restore-btn {
+  flex: 0 0 auto;
+  padding: 10px 8px;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.setting-help {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #8ea0b8;
+  margin-top: 5px;
 }
