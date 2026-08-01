@@ -16,7 +16,7 @@ export class OverlayDomService {
   private els?: OverlayElements;
   private debugTimeout: number | null = null;
   private blPlayer: PlayerCandidate | null = null;
-  private blDetails: BeatleaderPlayerOverlayDetails = { global: null, region: null, friends: null };
+  private blDetails: BeatleaderPlayerOverlayDetails = this.getEmptyBeatleaderDetails();
   private blStatusText = 'Loading...';
   private ssPlayer: PlayerCandidate | null = null;
   private ssStatusText = 'Loading...';
@@ -99,6 +99,10 @@ export class OverlayDomService {
       inputSs: this.mustGet('inp-ss') as HTMLInputElement,
       inputNameSource: this.mustGet('inp-name-source') as HTMLSelectElement,
       inputAvatarSource: this.mustGet('inp-avatar-source') as HTMLSelectElement,
+      blProfileRefreshMinutesRow: this.mustGet('bl-profile-refresh-minutes-row'),
+      inputBlProfileRefreshStrategy: this.mustGet('inp-bl-profile-refresh-strategy') as HTMLSelectElement,
+      inputBlProfileRefreshMinutes: this.mustGet('inp-bl-profile-refresh-minutes') as HTMLSelectElement,
+      inputSsProfileRefreshMinutes: this.mustGet('inp-ss-profile-refresh-minutes') as HTMLSelectElement,
       inputCustomProxy: this.mustGet('inp-custom-proxy') as HTMLInputElement,
       inputShowBl: this.mustGet('inp-show-bl') as HTMLInputElement,
       inputShowSs: this.mustGet('inp-show-ss') as HTMLInputElement,
@@ -123,6 +127,10 @@ export class OverlayDomService {
       inputMapBg: this.mustGet('inp-map-bg') as HTMLInputElement,
       inputBlBg: this.mustGet('inp-bl-bg') as HTMLInputElement
     };
+
+    this.els.inputBlProfileRefreshStrategy.addEventListener('change', () => {
+      this.updateBeatleaderProfileRefreshIntervalVisibility();
+    });
 
     return this.els;
   }
@@ -170,6 +178,16 @@ export class OverlayDomService {
       element.textContent = translations[key];
     });
 
+    document.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((element) => {
+      const key = element.getAttribute('data-i18n-title');
+
+      if (!key || !translations[key]) {
+        return;
+      }
+
+      element.title = translations[key];
+    });
+
     this.elements.inputBl.placeholder = translations['blPlaceholder'];
     this.elements.inputSs.placeholder = translations['ssPlaceholder'];
     this.elements.inputCustomProxy.placeholder = translations['customProxyPlaceholder'];
@@ -186,6 +204,10 @@ export class OverlayDomService {
     this.elements.inputSs.value = config.ssId;
     this.elements.inputNameSource.value = config.nameSource;
     this.elements.inputAvatarSource.value = config.avatarSource;
+    this.elements.inputBlProfileRefreshStrategy.value = config.blProfileRefreshStrategy;
+    this.elements.inputBlProfileRefreshMinutes.value = String(config.blProfileRefreshMinutes);
+    this.elements.inputSsProfileRefreshMinutes.value = String(config.ssProfileRefreshMinutes);
+    this.updateBeatleaderProfileRefreshIntervalVisibility();
     this.elements.inputCustomProxy.value = config.customProxy;
     this.elements.inputShowBl.checked = config.showBL !== false;
     this.elements.inputShowSs.checked = config.showSS === true;
@@ -216,6 +238,11 @@ export class OverlayDomService {
     if (langRadio) langRadio.checked = true;
   }
 
+  private updateBeatleaderProfileRefreshIntervalVisibility(): void {
+    this.elements.blProfileRefreshMinutesRow.style.display =
+      this.elements.inputBlProfileRefreshStrategy.value === 'interval' ? '' : 'none';
+  }
+
   readFormConfig(currentConfig: OverlayConfig): OverlayConfig {
     const checkedLayout = document.querySelector<HTMLInputElement>('input[name="layout"]:checked')?.value ?? currentConfig.layout;
     const checkedLang = document.querySelector<HTMLInputElement>('input[name="lang"]:checked')?.value ?? currentConfig.lang;
@@ -231,6 +258,11 @@ export class OverlayDomService {
       ssId: this.elements.inputSs.value.trim(),
       nameSource: this.elements.inputNameSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
       avatarSource: this.elements.inputAvatarSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
+      blProfileRefreshStrategy: this.configService.isBeatleaderProfileRefreshStrategy(this.elements.inputBlProfileRefreshStrategy.value)
+        ? this.elements.inputBlProfileRefreshStrategy.value
+        : currentConfig.blProfileRefreshStrategy,
+      blProfileRefreshMinutes: this.configService.normalizeProfileRefreshMinutes(this.elements.inputBlProfileRefreshMinutes.value),
+      ssProfileRefreshMinutes: this.configService.normalizeProfileRefreshMinutes(this.elements.inputSsProfileRefreshMinutes.value),
       showBL: this.elements.inputShowBl.checked,
       showSS: this.elements.inputShowSs.checked,
       showBLNextGlobal: this.elements.inputShowBlNextGlobal.checked,
@@ -420,14 +452,14 @@ export class OverlayDomService {
 
   resetBLDisplay(lang: Lang, messageKey: string = 'loading'): void {
     this.blPlayer = null;
-    this.blDetails = { global: null, region: null, friends: null };
+    this.blDetails = this.getEmptyBeatleaderDetails();
     this.blStatusText = this.configService.getText(lang, messageKey);
     this.refreshRankProfile(this.configService.getConfig());
   }
 
   renderBLPlayer(player: PlayerCandidate, details: BeatleaderPlayerOverlayDetails, config: OverlayConfig): void {
     this.blPlayer = player;
-    this.blDetails = details;
+    this.blDetails = this.mergeBeatleaderDetails(details, this.blDetails);
     this.blStatusText = player.name || 'Unknown';
     this.refreshRankProfile(config);
   }
@@ -708,8 +740,8 @@ export class OverlayDomService {
       this.formatPpValue(this.ssPlayer?.pp)
     );
 
-    this.elements.rankNextGlobal.textContent = this.formatBeatLeaderNeighbor(this.blDetails.global);
-    this.elements.rankNextRegion.textContent = this.formatBeatLeaderNeighbor(this.blDetails.region);
+    this.renderBeatLeaderNeighbor(this.elements.rankNextGlobal, this.blDetails.global);
+    this.renderBeatLeaderNeighbor(this.elements.rankNextRegion, this.blDetails.region);
     this.elements.rankNextGlobalRow.style.display = hasBL && config.showBLNextGlobal ? 'flex' : 'none';
     this.elements.rankNextRegionRow.style.display = hasBL && config.showBLNextRegion ? 'flex' : 'none';
 
@@ -812,21 +844,81 @@ export class OverlayDomService {
     return element;
   }
 
+  private renderBeatLeaderNeighbor(element: HTMLElement, info: BeatleaderPlayerOverlayDetails['global']): void {
+    const title = this.formatBeatLeaderNeighbor(info);
+    element.replaceChildren();
+    element.title = title;
+
+    if (info.status !== 'ready' || !info.value.name) {
+      element.textContent = title;
+      return;
+    }
+
+    if (typeof info.value.ppDelta !== 'number') {
+      const name = document.createElement('span');
+      name.className = 'bl-next-player-name';
+      name.textContent = info.value.name;
+      element.appendChild(name);
+      return;
+    }
+
+    const ppText = info.value.ppDelta.toLocaleString(undefined, {
+      minimumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2,
+      maximumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2
+    });
+    const separator = document.createElement('span');
+    separator.className = 'bl-next-separator';
+    separator.textContent = ' • ';
+
+    const pp = document.createElement('span');
+    pp.className = 'bl-next-pp';
+    pp.textContent = `+${ppText} pp`;
+
+    const name = document.createElement('span');
+    name.className = 'bl-next-player-name';
+    name.textContent = info.value.name;
+
+    element.append(pp, separator, name);
+  }
+
   private formatBeatLeaderNeighbor(info: BeatleaderPlayerOverlayDetails['global']): string {
-    if (!info?.name) {
+    if (info.status === 'failed') {
+      return '--';
+    }
+
+    if (info.status !== 'ready' || !info.value.name) {
       return 'N/A';
     }
 
-    if (typeof info.ppDelta !== 'number') {
-      return info.name;
+    if (typeof info.value.ppDelta !== 'number') {
+      return info.value.name;
     }
 
-    const ppText = info.ppDelta.toLocaleString(undefined, {
-      minimumFractionDigits: info.ppDelta >= 100 ? 0 : 2,
-      maximumFractionDigits: info.ppDelta >= 100 ? 0 : 2
+    const ppText = info.value.ppDelta.toLocaleString(undefined, {
+      minimumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2,
+      maximumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2
     });
 
-    return `${info.name} • +${ppText} pp`;
+    return `+${ppText} pp • ${info.value.name}`;
+  }
+
+  private mergeBeatleaderDetails(
+    next: BeatleaderPlayerOverlayDetails,
+    previous: BeatleaderPlayerOverlayDetails
+  ): BeatleaderPlayerOverlayDetails {
+    return {
+      global: next.global.status === 'failed' && previous.global.status === 'ready' ? previous.global : next.global,
+      region: next.region.status === 'failed' && previous.region.status === 'ready' ? previous.region : next.region,
+      friends: next.friends.status === 'failed' && previous.friends.status === 'ready' ? previous.friends : next.friends
+    };
+  }
+
+  private getEmptyBeatleaderDetails(): BeatleaderPlayerOverlayDetails {
+    return {
+      global: { status: 'empty' },
+      region: { status: 'empty' },
+      friends: { status: 'empty' }
+    };
   }
 
   private formatMapRating(value: number | null): string {

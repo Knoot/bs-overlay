@@ -11,6 +11,7 @@ export type Layout =
   | 'bottom-right';
 export type ViewMode = 'menu' | 'playing';
 export type RankIdentitySource = 'beatleader' | 'scoresaber';
+export type BeatleaderProfileRefreshStrategy = 'score' | 'interval';
 
 export interface OverlayConfig {
   lang: Lang;
@@ -28,6 +29,9 @@ export interface OverlayConfig {
   resolvedBlQuery: string;
   resolvedSsId: string;
   resolvedSsQuery: string;
+  blProfileRefreshStrategy: BeatleaderProfileRefreshStrategy;
+  blProfileRefreshMinutes: number;
+  ssProfileRefreshMinutes: number;
   showBL: boolean;
   showSS: boolean;
   showBLNextGlobal: boolean;
@@ -67,10 +71,15 @@ export interface BeatleaderNextPlayerInfo {
   ppDelta: number | null;
 }
 
+export type BeatleaderNextPlayerState =
+  | { status: 'ready'; value: BeatleaderNextPlayerInfo }
+  | { status: 'empty' }
+  | { status: 'failed' };
+
 export interface BeatleaderPlayerOverlayDetails {
-  global: BeatleaderNextPlayerInfo | null;
-  region: BeatleaderNextPlayerInfo | null;
-  friends: BeatleaderNextPlayerInfo | null;
+  global: BeatleaderNextPlayerState;
+  region: BeatleaderNextPlayerState;
+  friends: BeatleaderNextPlayerState;
 }
 
 export interface BeatleaderMapRatings {
@@ -216,6 +225,10 @@ export interface OverlayElements {
   inputSs: HTMLInputElement;
   inputNameSource: HTMLSelectElement;
   inputAvatarSource: HTMLSelectElement;
+  blProfileRefreshMinutesRow: HTMLElement;
+  inputBlProfileRefreshStrategy: HTMLSelectElement;
+  inputBlProfileRefreshMinutes: HTMLSelectElement;
+  inputSsProfileRefreshMinutes: HTMLSelectElement;
   inputCustomProxy: HTMLInputElement;
   inputShowBl: HTMLInputElement;
   inputShowSs: HTMLInputElement;

@@ -29,9 +29,9 @@
       <input type="text" id="inp-ws" placeholder="ws://127.0.0.1:2947/socket">
     </div>
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="customProxyLabel">Custom Proxy Prefix</label>
+      <label style="font-size: 12px; color: #ccc;" data-i18n="customProxyLabel" data-i18n-title="proxyTooltip" title="Proxy prefixes are used when direct API requests are blocked by the browser.">Custom Proxy Prefix</label>
       <div class="proxy-input-row">
-        <input type="text" id="inp-custom-proxy" placeholder="https://my-proxy.example/?url=">
+        <input type="text" id="inp-custom-proxy" placeholder="https://my-proxy.example/?url=" data-i18n-title="proxyTooltip" title="Proxy prefixes are used when direct API requests are blocked by the browser.">
         <button type="button" class="proxy-restore-btn" (click)="restoreProxySettings()" data-i18n="restoreProxyBtn">RESTORE</button>
       </div>
       <div class="setting-help" data-i18n="proxyHelp">Use commas to separate multiple proxy prefixes.</div>
@@ -143,6 +143,24 @@
       </div>
 
       <div class="setting-row">
+        <label style="font-size: 12px; color: #ccc;" data-i18n="profileRefreshStrategyLabel">Profile Refresh</label>
+        <select id="inp-bl-profile-refresh-strategy">
+          <option value="score" data-i18n="profileRefreshScoreOption">On score upload</option>
+          <option value="interval" data-i18n="profileRefreshIntervalOption">Periodically</option>
+        </select>
+      </div>
+
+      <div class="setting-row" id="bl-profile-refresh-minutes-row">
+        <label style="font-size: 12px; color: #ccc;" data-i18n="profileRefreshIntervalLabel">Refresh Interval, min</label>
+        <select id="inp-bl-profile-refresh-minutes">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
         <label style="font-size: 12px; color: #ccc; margin-top: 5px;">BeatLeader</label>
         <div class="modules-grid modules-grid-single">
           <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-global"> <span data-i18n="modBlNextGlobal">Next Global</span></label>
@@ -156,6 +174,16 @@
       <div class="setting-row">
         <label style="font-size: 12px; color: #ccc;" data-i18n="ssLabel">ScoreSaber ID / Nickname</label>
         <input type="text" id="inp-ss">
+      </div>
+
+      <div class="setting-row">
+        <label style="font-size: 12px; color: #ccc;" data-i18n="profileRefreshIntervalLabel">Refresh Interval, min</label>
+        <select id="inp-ss-profile-refresh-minutes">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="30">30</option>
+        </select>
       </div>
     </div>
   </div>

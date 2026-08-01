@@ -3,6 +3,7 @@ import {
   BeatleaderMapRatings,
   BeatleaderFetchResult,
   BeatleaderNextPlayerInfo,
+  BeatleaderNextPlayerState,
   BeatleaderOverlayRequestOptions,
   BeatleaderPaginatedPlayersResponse,
   BeatleaderPlayerOverlayDetails,
@@ -218,9 +219,9 @@ export class BeatleaderService {
 
   private emptyDetails(): BeatleaderPlayerOverlayDetails {
     return {
-      global: null,
-      region: null,
-      friends: null
+      global: this.emptyNextPlayerState(),
+      region: this.emptyNextPlayerState(),
+      friends: this.emptyNextPlayerState()
     };
   }
 
@@ -229,18 +230,18 @@ export class BeatleaderService {
     requestOptions: BeatleaderOverlayRequestOptions
   ): Promise<BeatleaderPlayerOverlayDetails> {
     const [global, region, friends] = await Promise.all([
-      requestOptions.includeGlobal ? this.fetchNextGlobalPlayer(player) : Promise.resolve(null),
-      requestOptions.includeRegion ? this.fetchNextRegionPlayer(player) : Promise.resolve(null),
-      // requestOptions.includeFriends ? this.fetchNextFriendsPlayer(player) : Promise.resolve(null)
-      Promise.resolve(null)
+      requestOptions.includeGlobal ? this.fetchNextGlobalPlayer(player) : Promise.resolve(this.emptyNextPlayerState()),
+      requestOptions.includeRegion ? this.fetchNextRegionPlayer(player) : Promise.resolve(this.emptyNextPlayerState()),
+      // requestOptions.includeFriends ? this.fetchNextFriendsPlayer(player) : Promise.resolve(this.emptyNextPlayerState())
+      Promise.resolve(this.emptyNextPlayerState())
     ]);
 
     return { global, region, friends };
   }
 
-  private async fetchNextGlobalPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerInfo | null> {
+  private async fetchNextGlobalPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerState> {
     if (!(typeof player.rank === 'number' && player.rank > 1)) {
-      return null;
+      return this.emptyNextPlayerState();
     }
 
     try {
@@ -250,15 +251,15 @@ export class BeatleaderService {
         page: player.rank - 1,
         count: 1
       });
-      return this.toNextPlayerInfo(response.data[0], player);
+      return this.toNextPlayerState(response.data[0], player);
     } catch {
-      return null;
+      return this.failedNextPlayerState();
     }
   }
 
-  private async fetchNextRegionPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerInfo | null> {
+  private async fetchNextRegionPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerState> {
     if (!(typeof player.countryRank === 'number' && player.countryRank > 1 && player.country)) {
-      return null;
+      return this.emptyNextPlayerState();
     }
 
     try {
@@ -269,9 +270,9 @@ export class BeatleaderService {
         count: 1,
         countries: player.country
       });
-      return this.toNextPlayerInfo(response.data[0], player);
+      return this.toNextPlayerState(response.data[0], player);
     } catch {
-      return null;
+      return this.failedNextPlayerState();
     }
   }
 
@@ -356,6 +357,11 @@ export class BeatleaderService {
     return this.extractPlayersPageResponse(json);
   }
 
+  private toNextPlayerState(candidate: PlayerCandidate | null | undefined, currentPlayer: PlayerCandidate): BeatleaderNextPlayerState {
+    const value = this.toNextPlayerInfo(candidate, currentPlayer);
+    return value ? { status: 'ready', value } : this.emptyNextPlayerState();
+  }
+
   private toNextPlayerInfo(candidate: PlayerCandidate | null | undefined, currentPlayer: PlayerCandidate): BeatleaderNextPlayerInfo | null {
     if (!candidate?.name) {
       return null;
@@ -372,16 +378,12 @@ export class BeatleaderService {
     };
   }
 
-  private isSamePlayer(left: PlayerCandidate | null | undefined, right: PlayerCandidate | null | undefined): boolean {
-    if (!left || !right) {
-      return false;
-    }
+  private emptyNextPlayerState(): BeatleaderNextPlayerState {
+    return { status: 'empty' };
+  }
 
-    if (left.id !== undefined && right.id !== undefined) {
-      return String(left.id) === String(right.id);
-    }
-
-    return this.normalizeLoose(left.name || '') === this.normalizeLoose(right.name || '');
+  private failedNextPlayerState(): BeatleaderNextPlayerState {
+    return { status: 'failed' };
   }
 
   private async fetchJSONWithProxyFallback(

@@ -441,6 +441,8 @@
   flex-direction: column;
   justify-content: center;
   gap: 5px;
+  width: min(340px, 100%);
+  min-width: 0;
   max-width: 340px;
 }
 
@@ -481,8 +483,63 @@
 }
 
 .bl-next-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   color: #bfc7d6;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+}
+
+.bl-next-line .rank-stat-label {
+  flex: 0 0 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.bl-next-line .rank-service-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  flex-wrap: nowrap;
+}
+
+.bl-next-line .service-icon {
+  flex: 0 0 13px;
+}
+
+.bl-next-line .rank-service-value > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.bl-next-line .bl-next-player-name {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bl-next-line .bl-next-separator,
+.bl-next-line .bl-next-pp {
+  flex: 0 0 auto;
+  min-width: max-content;
+  overflow-wrap: normal;
+  white-space: nowrap;
 }
 
 .service-icon {

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
 import {
   BeatleaderMapRatings,
+  BeatleaderPlayerOverlayDetails,
   MapInfoPayload,
   OverlayConfig,
   PpPredictorEntry,
@@ -19,6 +20,9 @@ import { ScoresaberService } from './scoresaber.service';
 @Injectable({ providedIn: 'root' })
 export class OverlayFacadeService {
   private static readonly MAP_RATINGS_CACHE_LIMIT = 200;
+  private static readonly BEATLEADER_SCORES_SOCKET_URL = 'wss://sockets.api.beatleader.com/scores';
+  private static readonly BEATLEADER_SCORES_RECONNECT_MS = 15000;
+  private static readonly MINUTE_MS = 60000;
   private config!: OverlayConfig;
   private isGamePlaying = false;
   private duration = 0;
@@ -26,17 +30,18 @@ export class OverlayFacadeService {
   private lastTimeAnchorMs = 0;
   private mapTimeMultiplier = 1;
   private progressRafId: number | null = null;
-  private lastBlFetch = 0;
-  private lastSsFetch = 0;
   private isFetchingBL = false;
   private isFetchingSS = false;
-  private blRefreshInterval: number | null = null;
   private currentMapHash = '';
   private currentMapDifficulty = '';
   private currentMapMode = '';
   private lastMapRatingsKey = '';
   private lastSsStarsKey = '';
   private isWsConnected = false;
+  private beatleaderScoresSocket: WebSocket | null = null;
+  private beatleaderScoresReconnectTimeout: number | null = null;
+  private beatleaderProfileRefreshInterval: number | null = null;
+  private scoresaberProfileRefreshInterval: number | null = null;
   private ppPredictorSocket: WebSocket | null = null;
   private ppPredictorReconnectTimeout: number | null = null;
   private readonly mapRatingsCache = new Map<string, BeatleaderMapRatings | null>();
@@ -73,17 +78,15 @@ export class OverlayFacadeService {
     this.dom.resetPpPredictor();
     this.connectWS();
     this.connectPpPredictor();
+    this.connectBeatleaderScoresSocket();
+    this.startBeatleaderProfileRefreshInterval();
+    this.startScoresaberProfileRefreshInterval();
     if (this.shouldShowBeatLeaderMenu()) {
-      void this.fetchBL(true);
+      void this.fetchBL();
     }
     if (this.shouldShowScoreSaberMenu()) {
-      void this.fetchSS(true);
-    }
-
-    this.blRefreshInterval = window.setInterval(() => {
-      void this.fetchBL();
       void this.fetchSS();
-    }, 900000);
+    }
 
     document.addEventListener('keydown', this.keydownHandler);
   }
@@ -92,12 +95,10 @@ export class OverlayFacadeService {
     document.removeEventListener('keydown', this.keydownHandler);
     this.stopProgressLoop();
     this.socket.destroy();
+    this.disconnectBeatleaderScoresSocket();
+    this.stopBeatleaderProfileRefreshInterval();
+    this.stopScoresaberProfileRefreshInterval();
     this.disconnectPpPredictor();
-
-    if (this.blRefreshInterval !== null) {
-      window.clearInterval(this.blRefreshInterval);
-      this.blRefreshInterval = null;
-    }
   }
 
   saveSettings(): void {
@@ -105,22 +106,27 @@ export class OverlayFacadeService {
     this.config = this.dom.readFormConfig(this.config);
     const wsChanged = this.config.ws !== previousConfig.ws;
     const proxyChanged = this.config.customProxy !== previousConfig.customProxy;
-    const beatLeaderChanged = this.config.blId !== previousConfig.blId || proxyChanged;
-    const scoreSaberChanged = this.config.ssId !== previousConfig.ssId || proxyChanged;
+    const beatLeaderProfileChanged =
+      this.config.blId !== previousConfig.blId || this.config.showBL !== previousConfig.showBL || proxyChanged;
+    const beatLeaderRefreshChanged =
+      beatLeaderProfileChanged ||
+      this.config.blProfileRefreshStrategy !== previousConfig.blProfileRefreshStrategy ||
+      this.config.blProfileRefreshMinutes !== previousConfig.blProfileRefreshMinutes;
+    const scoreSaberProfileChanged = this.config.ssId !== previousConfig.ssId || this.config.showSS !== previousConfig.showSS || proxyChanged;
+    const scoreSaberRefreshChanged =
+      scoreSaberProfileChanged || this.config.ssProfileRefreshMinutes !== previousConfig.ssProfileRefreshMinutes;
 
-    if (beatLeaderChanged) {
+    if (beatLeaderProfileChanged) {
       this.config.resolvedBlId = '';
       this.config.resolvedBlQuery = '';
-      this.lastBlFetch = 0;
       this.lastMapRatingsKey = '';
       this.dom.resetBLDisplay(this.config.lang, 'loading');
       this.dom.resetMapRatings();
     }
 
-    if (scoreSaberChanged) {
+    if (scoreSaberProfileChanged) {
       this.config.resolvedSsId = '';
       this.config.resolvedSsQuery = '';
-      this.lastSsFetch = 0;
       this.lastSsStarsKey = '';
       this.dom.resetSSDisplay(this.config.lang, 'loading');
       this.dom.resetSSStars();
@@ -149,17 +155,26 @@ export class OverlayFacadeService {
       this.dom.resetPpPredictor();
     }
 
-    if (beatLeaderChanged && this.shouldShowBeatLeaderMenu()) {
-      void this.fetchBL(true);
-    }
-    if (scoreSaberChanged && this.shouldShowScoreSaberMenu()) {
-      void this.fetchSS(true);
+    if (beatLeaderRefreshChanged) {
+      this.connectBeatleaderScoresSocket();
+      this.startBeatleaderProfileRefreshInterval();
     }
 
-    if (beatLeaderChanged || (!previousConfig.showMapRatings && this.config.showMapRatings)) {
+    if (scoreSaberRefreshChanged) {
+      this.startScoresaberProfileRefreshInterval();
+    }
+
+    if (beatLeaderProfileChanged && this.shouldShowBeatLeaderMenu()) {
+      void this.fetchBL();
+    }
+    if (scoreSaberProfileChanged && this.shouldShowScoreSaberMenu()) {
+      void this.fetchSS();
+    }
+
+    if (beatLeaderProfileChanged || (!previousConfig.showMapRatings && this.config.showMapRatings)) {
       void this.refreshCurrentMapRatings(false);
     }
-    if (scoreSaberChanged || (!previousConfig.showSSStars && this.config.showSSStars)) {
+    if (scoreSaberProfileChanged || (!previousConfig.showSSStars && this.config.showSSStars)) {
       void this.refreshCurrentScoreSaberStars(false);
     }
 
@@ -291,6 +306,111 @@ export class OverlayFacadeService {
       this.ppPredictorReconnectTimeout = null;
       this.connectPpPredictor();
     }, 3000);
+  }
+
+  private connectBeatleaderScoresSocket(): void {
+    this.disconnectBeatleaderScoresSocket();
+
+    if (!this.shouldUseBeatleaderScoresSocket()) {
+      return;
+    }
+
+    let socket: WebSocket;
+
+    try {
+      socket = new WebSocket(OverlayFacadeService.BEATLEADER_SCORES_SOCKET_URL);
+    } catch (error) {
+      this.scheduleBeatleaderScoresReconnect();
+      this.dom.showDebug(`BL scores socket error: ${this.describeError(error)}`, this.config.showDebugUI);
+      return;
+    }
+
+    this.beatleaderScoresSocket = socket;
+
+    socket.onopen = () => {
+      if (this.beatleaderScoresSocket !== socket) return;
+      this.dom.showDebug('BL scores socket connected', this.config.showDebugUI);
+    };
+
+    socket.onmessage = (event) => {
+      if (this.beatleaderScoresSocket !== socket) return;
+
+      try {
+        this.handleBeatleaderScoresMessage(this.parseSocketMessage(event.data));
+      } catch (error) {
+        this.dom.showDebug(`BL scores socket handler error: ${this.describeError(error)}`, this.config.showDebugUI);
+      }
+    };
+
+    const disconnectHandler = (eventOrError: Event) => {
+      if (this.beatleaderScoresSocket !== socket) return;
+      this.beatleaderScoresSocket = null;
+      this.scheduleBeatleaderScoresReconnect();
+      this.dom.showDebug(`BL scores socket disconnected: ${this.describeError(eventOrError)}`, this.config.showDebugUI);
+    };
+
+    socket.onclose = disconnectHandler;
+    socket.onerror = disconnectHandler;
+  }
+
+  private disconnectBeatleaderScoresSocket(): void {
+    if (this.beatleaderScoresReconnectTimeout !== null) {
+      window.clearTimeout(this.beatleaderScoresReconnectTimeout);
+      this.beatleaderScoresReconnectTimeout = null;
+    }
+
+    if (!this.beatleaderScoresSocket) {
+      return;
+    }
+
+    try {
+      this.beatleaderScoresSocket.onopen = null;
+      this.beatleaderScoresSocket.onmessage = null;
+      this.beatleaderScoresSocket.onclose = null;
+      this.beatleaderScoresSocket.onerror = null;
+      this.beatleaderScoresSocket.close();
+    } catch {
+      // Ignore cleanup errors during settings changes.
+    }
+
+    this.beatleaderScoresSocket = null;
+  }
+
+  private scheduleBeatleaderScoresReconnect(): void {
+    if (!this.shouldUseBeatleaderScoresSocket() || this.beatleaderScoresReconnectTimeout !== null) {
+      return;
+    }
+
+    this.beatleaderScoresReconnectTimeout = window.setTimeout(() => {
+      this.beatleaderScoresReconnectTimeout = null;
+      this.connectBeatleaderScoresSocket();
+    }, OverlayFacadeService.BEATLEADER_SCORES_RECONNECT_MS);
+  }
+
+  private handleBeatleaderScoresMessage(payload: unknown): void {
+    if (!this.shouldShowBeatLeaderMenu() || !this.matchesConfiguredBeatleaderPlayer(payload)) {
+      return;
+    }
+
+    this.dom.showDebug('BL score event matched current profile. Refreshing...', this.config.showDebugUI);
+    void this.fetchBL();
+  }
+
+  private parseSocketMessage(data: unknown): unknown {
+    if (typeof data !== 'string') {
+      return data;
+    }
+
+    const text = data.trim();
+    if (!text) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      return text;
+    }
   }
 
   private handlePpPredictorMessage(data: PpPredictorPayload): void {
@@ -462,12 +582,8 @@ export class OverlayFacadeService {
     }
   }
 
-  private async fetchBL(force: boolean = false): Promise<void> {
+  private async fetchBL(): Promise<void> {
     if (!this.shouldShowBeatLeaderMenu() || this.isFetchingBL) {
-      return;
-    }
-
-    if (!force && Date.now() - this.lastBlFetch < 900000) {
       return;
     }
 
@@ -494,7 +610,7 @@ export class OverlayFacadeService {
       this.configService.persistConfig();
 
       this.dom.renderBLPlayer(result.player, result.details, this.config);
-      this.lastBlFetch = Date.now();
+      this.showBeatleaderDetailsDebug(result.details);
 
       if (result.bestMatchName) {
         this.dom.showDebug(`BL best match: ${result.bestMatchName}`, this.config.showDebugUI);
@@ -510,12 +626,18 @@ export class OverlayFacadeService {
     }
   }
 
-  private async fetchSS(force: boolean = false): Promise<void> {
-    if (!this.shouldShowScoreSaberMenu() || this.isFetchingSS) {
-      return;
+  private showBeatleaderDetailsDebug(details: BeatleaderPlayerOverlayDetails): void {
+    if (details.global.status === 'failed') {
+      this.dom.showDebug('BL Next Global load failed', this.config.showDebugUI);
     }
 
-    if (!force && Date.now() - this.lastSsFetch < 900000) {
+    if (details.region.status === 'failed') {
+      this.dom.showDebug('BL Next Region load failed', this.config.showDebugUI);
+    }
+  }
+
+  private async fetchSS(): Promise<void> {
+    if (!this.shouldShowScoreSaberMenu() || this.isFetchingSS) {
       return;
     }
 
@@ -537,7 +659,6 @@ export class OverlayFacadeService {
       this.configService.persistConfig();
 
       this.dom.renderSSPlayer(result.player);
-      this.lastSsFetch = Date.now();
 
       if (result.bestMatchName) {
         this.dom.showDebug(`SS best match: ${result.bestMatchName}`, this.config.showDebugUI);
@@ -571,13 +692,52 @@ export class OverlayFacadeService {
     this.dom.setViewMode('menu', showRankMenu);
     this.dom.setAppVisible(showRankMenu);
     this.dom.applyLayout(this.config);
+  }
 
-    if (this.shouldShowBeatLeaderMenu()) {
+  private startBeatleaderProfileRefreshInterval(): void {
+    this.stopBeatleaderProfileRefreshInterval();
+
+    if (!this.shouldUseBeatleaderProfileRefreshInterval()) {
+      return;
+    }
+
+    this.beatleaderProfileRefreshInterval = window.setInterval(() => {
       void this.fetchBL();
+    }, this.getProfileRefreshIntervalMs(this.config.blProfileRefreshMinutes));
+  }
+
+  private stopBeatleaderProfileRefreshInterval(): void {
+    if (this.beatleaderProfileRefreshInterval === null) {
+      return;
     }
-    if (this.shouldShowScoreSaberMenu()) {
+
+    window.clearInterval(this.beatleaderProfileRefreshInterval);
+    this.beatleaderProfileRefreshInterval = null;
+  }
+
+  private startScoresaberProfileRefreshInterval(): void {
+    this.stopScoresaberProfileRefreshInterval();
+
+    if (!this.shouldShowScoreSaberMenu()) {
+      return;
+    }
+
+    this.scoresaberProfileRefreshInterval = window.setInterval(() => {
       void this.fetchSS();
+    }, this.getProfileRefreshIntervalMs(this.config.ssProfileRefreshMinutes));
+  }
+
+  private stopScoresaberProfileRefreshInterval(): void {
+    if (this.scoresaberProfileRefreshInterval === null) {
+      return;
     }
+
+    window.clearInterval(this.scoresaberProfileRefreshInterval);
+    this.scoresaberProfileRefreshInterval = null;
+  }
+
+  private getProfileRefreshIntervalMs(minutes: number): number {
+    return this.configService.normalizeProfileRefreshMinutes(minutes) * OverlayFacadeService.MINUTE_MS;
   }
 
   private resetMapOverlayState(): void {
@@ -606,12 +766,74 @@ export class OverlayFacadeService {
     return this.config.showSS && this.config.ssId.trim().length > 0;
   }
 
+  private shouldUseBeatleaderScoresSocket(): boolean {
+    return this.shouldShowBeatLeaderMenu() && this.config.blProfileRefreshStrategy === 'score';
+  }
+
+  private shouldUseBeatleaderProfileRefreshInterval(): boolean {
+    return this.shouldShowBeatLeaderMenu() && this.config.blProfileRefreshStrategy === 'interval';
+  }
+
   private shouldShowRankMenu(): boolean {
     return this.shouldShowBeatLeaderMenu() || this.shouldShowScoreSaberMenu();
   }
 
   private shouldShowRankMenuNow(): boolean {
     return this.shouldShowRankMenu() && (this.config.showProfileAlways !== false || this.isWsConnected);
+  }
+
+  private matchesConfiguredBeatleaderPlayer(payload: unknown): boolean {
+    const playerIds = new Set(
+      [this.config.blId, this.config.resolvedBlId]
+        .map((value) => this.normalizePlayerId(value))
+        .filter((value) => value.length > 0)
+    );
+
+    if (playerIds.size === 0) {
+      return false;
+    }
+
+    return this.payloadContainsBeatleaderPlayerId(payload, playerIds);
+  }
+
+  private payloadContainsBeatleaderPlayerId(payload: unknown, playerIds: Set<string>, path: string = '', depth: number = 0): boolean {
+    if (depth > 8) {
+      return false;
+    }
+
+    if (Array.isArray(payload)) {
+      return payload.some((item, index) => this.payloadContainsBeatleaderPlayerId(item, playerIds, `${path}.${index}`, depth + 1));
+    }
+
+    if (this.isRecord(payload)) {
+      return Object.entries(payload).some(([key, value]) =>
+        this.payloadContainsBeatleaderPlayerId(value, playerIds, path ? `${path}.${key}` : key, depth + 1)
+      );
+    }
+
+    const id = this.normalizePlayerId(payload);
+    if (!id || !playerIds.has(id)) {
+      return false;
+    }
+
+    const lowerPath = path.toLowerCase();
+    return lowerPath.includes('player') || lowerPath.includes('user');
+  }
+
+  private normalizePlayerId(value: unknown): string {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return String(value);
+    }
+
+    return '';
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 
   private syncSongTime(timeSec: number): void {

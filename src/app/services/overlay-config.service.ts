@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DEFAULT_CONFIG, I18N, STORAGE_KEY } from '../constants/overlay.constants';
-import { Lang, Layout, OverlayConfig, Theme } from '../models/overlay.models';
+import { BeatleaderProfileRefreshStrategy, Lang, Layout, OverlayConfig, Theme } from '../models/overlay.models';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayConfigService {
@@ -25,6 +25,11 @@ export class OverlayConfigService {
     this.config = { ...this.config, ...this.readQueryParams() };
     this.config.scale = this.clampScale(Number.parseFloat(String(this.config.scale)));
     this.config.profileScale = this.clampScale(Number.parseFloat(String(this.config.profileScale)));
+    this.config.blProfileRefreshStrategy = this.isBeatleaderProfileRefreshStrategy(this.config.blProfileRefreshStrategy)
+      ? this.config.blProfileRefreshStrategy
+      : DEFAULT_CONFIG.blProfileRefreshStrategy;
+    this.config.blProfileRefreshMinutes = this.normalizeProfileRefreshMinutes(this.config.blProfileRefreshMinutes);
+    this.config.ssProfileRefreshMinutes = this.normalizeProfileRefreshMinutes(this.config.ssProfileRefreshMinutes);
     return this.getConfig();
   }
 
@@ -86,6 +91,15 @@ export class OverlayConfigService {
     return value === 'cyberpunk' || value === 'sunset';
   }
 
+  isBeatleaderProfileRefreshStrategy(value: string): value is BeatleaderProfileRefreshStrategy {
+    return value === 'score' || value === 'interval';
+  }
+
+  normalizeProfileRefreshMinutes(value: unknown): number {
+    const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+    return [5, 10, 15, 30].includes(parsed) ? parsed : 10;
+  }
+
   syncQueryParams(config: OverlayConfig): void {
     const params = new URLSearchParams();
 
@@ -98,6 +112,9 @@ export class OverlayConfigService {
     params.set('profileScale', String(this.clampScale(config.profileScale)));
     params.set('nameSource', config.nameSource);
     params.set('avatarSource', config.avatarSource);
+    params.set('blProfileRefreshStrategy', config.blProfileRefreshStrategy);
+    params.set('blProfileRefreshMinutes', String(this.normalizeProfileRefreshMinutes(config.blProfileRefreshMinutes)));
+    params.set('ssProfileRefreshMinutes', String(this.normalizeProfileRefreshMinutes(config.ssProfileRefreshMinutes)));
     params.set('showBL', String(config.showBL));
     params.set('showSS', String(config.showSS));
     params.set('showBLNextGlobal', String(config.showBLNextGlobal));
@@ -146,6 +163,9 @@ export class OverlayConfigService {
     const profileScale = params.get('profileScale');
     const nameSource = params.get('nameSource');
     const avatarSource = params.get('avatarSource');
+    const blProfileRefreshStrategy = params.get('blProfileRefreshStrategy');
+    const blProfileRefreshMinutes = params.get('blProfileRefreshMinutes');
+    const ssProfileRefreshMinutes = params.get('ssProfileRefreshMinutes');
     const blId = params.get('blId');
     const ssId = params.get('ssId');
 
@@ -193,6 +213,18 @@ export class OverlayConfigService {
 
     if (avatarSource === 'beatleader' || avatarSource === 'scoresaber') {
       partial.avatarSource = avatarSource;
+    }
+
+    if (blProfileRefreshStrategy && this.isBeatleaderProfileRefreshStrategy(blProfileRefreshStrategy)) {
+      partial.blProfileRefreshStrategy = blProfileRefreshStrategy;
+    }
+
+    if (blProfileRefreshMinutes !== null) {
+      partial.blProfileRefreshMinutes = this.normalizeProfileRefreshMinutes(blProfileRefreshMinutes);
+    }
+
+    if (ssProfileRefreshMinutes !== null) {
+      partial.ssProfileRefreshMinutes = this.normalizeProfileRefreshMinutes(ssProfileRefreshMinutes);
     }
 
     if (ssId !== null) {
