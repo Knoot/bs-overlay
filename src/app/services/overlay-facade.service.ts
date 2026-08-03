@@ -783,41 +783,31 @@ export class OverlayFacadeService {
   }
 
   private matchesConfiguredBeatleaderPlayer(payload: unknown): boolean {
-    const playerIds = new Set(
-      [this.config.blId, this.config.resolvedBlId]
-        .map((value) => this.normalizePlayerId(value))
-        .filter((value) => value.length > 0)
+    const configuredIds = new Set(
+      [this.config.blId, this.config.resolvedBlId].filter((value) => this.isNumericPlayerId(value)).map((value) => value.trim())
     );
+    const payloadIds = this.getBeatleaderSocketPayloadPlayerIds(payload);
 
-    if (playerIds.size === 0) {
-      return false;
+    if (payloadIds.some((id) => configuredIds.has(id))) {
+      return true;
     }
 
-    return this.payloadContainsBeatleaderPlayerId(payload, playerIds);
+    return false;
   }
 
-  private payloadContainsBeatleaderPlayerId(payload: unknown, playerIds: Set<string>, path: string = '', depth: number = 0): boolean {
-    if (depth > 8) {
-      return false;
+  private getBeatleaderSocketPayloadPlayerIds(payload: unknown): string[] {
+    if (!this.isRecord(payload)) {
+      return [];
     }
 
-    if (Array.isArray(payload)) {
-      return payload.some((item, index) => this.payloadContainsBeatleaderPlayerId(item, playerIds, `${path}.${index}`, depth + 1));
-    }
+    const player = this.isRecord(payload['player']) ? payload['player'] : null;
+    return [payload['playerId'], player?.['id']]
+      .map((value) => this.normalizePlayerId(value))
+      .filter((value) => value.length > 0);
+  }
 
-    if (this.isRecord(payload)) {
-      return Object.entries(payload).some(([key, value]) =>
-        this.payloadContainsBeatleaderPlayerId(value, playerIds, path ? `${path}.${key}` : key, depth + 1)
-      );
-    }
-
-    const id = this.normalizePlayerId(payload);
-    if (!id || !playerIds.has(id)) {
-      return false;
-    }
-
-    const lowerPath = path.toLowerCase();
-    return lowerPath.includes('player') || lowerPath.includes('user');
+  private isNumericPlayerId(value: string): boolean {
+    return /^\d+$/.test(value.trim());
   }
 
   private normalizePlayerId(value: unknown): string {
