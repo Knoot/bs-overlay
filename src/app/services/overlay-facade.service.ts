@@ -22,6 +22,7 @@ export class OverlayFacadeService {
   private static readonly MAP_RATINGS_CACHE_LIMIT = 200;
   private static readonly BEATLEADER_SCORES_SOCKET_URL = 'wss://sockets.api.beatleader.com/scores';
   private static readonly BEATLEADER_SCORES_RECONNECT_MS = 15000;
+  private static readonly BEATLEADER_QUEUED_REFRESH_DELAY_MS = 5000;
   private static readonly MINUTE_MS = 60000;
   private config!: OverlayConfig;
   private isGamePlaying = false;
@@ -31,6 +32,7 @@ export class OverlayFacadeService {
   private mapTimeMultiplier = 1;
   private progressRafId: number | null = null;
   private isFetchingBL = false;
+  private pendingBeatleaderRefresh = false;
   private isFetchingSS = false;
   private currentMapHash = '';
   private currentMapDifficulty = '';
@@ -82,7 +84,7 @@ export class OverlayFacadeService {
     this.startBeatleaderProfileRefreshInterval();
     this.startScoresaberProfileRefreshInterval();
     if (this.shouldShowBeatLeaderMenu()) {
-      void this.fetchBL();
+      this.requestBeatleaderRefresh('startup');
     }
     if (this.shouldShowScoreSaberMenu()) {
       void this.fetchSS();
@@ -165,7 +167,7 @@ export class OverlayFacadeService {
     }
 
     if (beatLeaderProfileChanged && this.shouldShowBeatLeaderMenu()) {
-      void this.fetchBL();
+      this.requestBeatleaderRefresh('settings');
     }
     if (scoreSaberProfileChanged && this.shouldShowScoreSaberMenu()) {
       void this.fetchSS();
@@ -388,12 +390,15 @@ export class OverlayFacadeService {
   }
 
   private handleBeatleaderScoresMessage(payload: unknown): void {
-    if (!this.shouldShowBeatLeaderMenu() || !this.matchesConfiguredBeatleaderPlayer(payload)) {
+    const matched = this.matchesConfiguredBeatleaderPlayer(payload);
+    this.logBeatleaderScoresMessageDebug(payload, matched);
+
+    if (!this.shouldShowBeatLeaderMenu() || !matched) {
       return;
     }
 
-    this.dom.showDebug('BL score event matched current profile. Refreshing...', this.config.showDebugUI);
-    void this.fetchBL();
+    this.dom.showDebug('BL score event matched current profile', this.config.showDebugUI);
+    this.requestBeatleaderRefresh('score-event');
   }
 
   private parseSocketMessage(data: unknown): unknown {
@@ -582,12 +587,28 @@ export class OverlayFacadeService {
     }
   }
 
-  private async fetchBL(): Promise<void> {
-    if (!this.shouldShowBeatLeaderMenu() || this.isFetchingBL) {
+  private requestBeatleaderRefresh(reason: string): void {
+    if (!this.shouldShowBeatLeaderMenu()) {
+      this.dom.showDebug(`BL refresh skipped: hidden (${reason})`, this.config.showDebugUI);
+      return;
+    }
+
+    if (this.isFetchingBL) {
+      this.pendingBeatleaderRefresh = true;
+      this.dom.showDebug(`BL refresh queued: ${reason}`, this.config.showDebugUI);
+      return;
+    }
+
+    void this.fetchBL(reason);
+  }
+
+  private async fetchBL(reason = 'manual'): Promise<void> {
+    if (!this.shouldShowBeatLeaderMenu()) {
       return;
     }
 
     this.isFetchingBL = true;
+    this.dom.showDebug(`BL refresh started: ${reason}`, this.config.showDebugUI);
 
     try {
       const result = await this.beatleader.fetchPlayer(this.config.blId, this.config.resolvedBlId, this.config.resolvedBlQuery, {
@@ -623,6 +644,11 @@ export class OverlayFacadeService {
       this.dom.showDebug(`BL Error: ${message}`, this.config.showDebugUI);
     } finally {
       this.isFetchingBL = false;
+
+      if (this.pendingBeatleaderRefresh) {
+        this.pendingBeatleaderRefresh = false;
+        window.setTimeout(() => this.requestBeatleaderRefresh('queued-score-event'), OverlayFacadeService.BEATLEADER_QUEUED_REFRESH_DELAY_MS);
+      }
     }
   }
 
@@ -702,7 +728,7 @@ export class OverlayFacadeService {
     }
 
     this.beatleaderProfileRefreshInterval = window.setInterval(() => {
-      void this.fetchBL();
+      this.requestBeatleaderRefresh('interval');
     }, this.getProfileRefreshIntervalMs(this.config.blProfileRefreshMinutes));
   }
 
@@ -783,9 +809,7 @@ export class OverlayFacadeService {
   }
 
   private matchesConfiguredBeatleaderPlayer(payload: unknown): boolean {
-    const configuredIds = new Set(
-      [this.config.blId, this.config.resolvedBlId].filter((value) => this.isNumericPlayerId(value)).map((value) => value.trim())
-    );
+    const configuredIds = this.getConfiguredBeatleaderPlayerIds();
     const payloadIds = this.getBeatleaderSocketPayloadPlayerIds(payload);
 
     if (payloadIds.some((id) => configuredIds.has(id))) {
@@ -793,6 +817,25 @@ export class OverlayFacadeService {
     }
 
     return false;
+  }
+
+  private logBeatleaderScoresMessageDebug(payload: unknown, matched: boolean): void {
+    if (!this.config.showDebugUI) {
+      return;
+    }
+
+    console.debug('[BS Overlay] BL score socket message', {
+      matched,
+      configuredIds: Array.from(this.getConfiguredBeatleaderPlayerIds()),
+      payloadIds: this.getBeatleaderSocketPayloadPlayerIds(payload),
+      payload
+    });
+  }
+
+  private getConfiguredBeatleaderPlayerIds(): Set<string> {
+    return new Set(
+      [this.config.blId, this.config.resolvedBlId].filter((value) => this.isNumericPlayerId(value)).map((value) => value.trim())
+    );
   }
 
   private getBeatleaderSocketPayloadPlayerIds(payload: unknown): string[] {
