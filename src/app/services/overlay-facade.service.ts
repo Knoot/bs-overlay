@@ -463,8 +463,7 @@ export class OverlayFacadeService {
   }
 
   private getPpPredictorUrl(): string {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${protocol}://localhost:6558/socket`;
+    return `ws://localhost:6558/socket`;
   }
 
   private handleWsMessage(data: WsPayload): void {
