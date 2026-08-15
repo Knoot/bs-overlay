@@ -129,6 +129,13 @@ export class BeatleaderService {
     };
   }
 
+  async fetchPlayerDetails(
+    player: PlayerCandidate,
+    requestOptions: BeatleaderOverlayRequestOptions
+  ): Promise<BeatleaderPlayerOverlayDetails> {
+    return this.fetchOverlayDetails(player, requestOptions);
+  }
+
   private normalizeName(value: string): string {
     return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
   }

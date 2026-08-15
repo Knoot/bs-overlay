@@ -199,6 +199,23 @@ export class OverlayDomService {
     this.refreshRankProfile(config);
   }
 
+  getBeatleaderPlayer(): PlayerCandidate | null {
+    return this.blPlayer ? { ...this.blPlayer } : null;
+  }
+
+  renderBLDetails(details: BeatleaderPlayerOverlayDetails, config: OverlayConfig): void {
+    this.blDetails = this.mergeBeatleaderDetails(details, this.blDetails);
+    this.refreshRankProfile(config);
+  }
+
+  hasBeatleaderNextGlobal(): boolean {
+    return this.blDetails.global.status === 'ready';
+  }
+
+  hasBeatleaderNextRegion(): boolean {
+    return this.blDetails.region.status === 'ready';
+  }
+
   resetSSDisplay(lang: Lang, messageKey: string = 'loading'): void {
     this.ssPlayer = null;
     this.ssStatusText = this.configService.getText(lang, messageKey);
@@ -504,10 +521,21 @@ export class OverlayDomService {
     previous: BeatleaderPlayerOverlayDetails
   ): BeatleaderPlayerOverlayDetails {
     return {
-      global: next.global.status === 'failed' && previous.global.status === 'ready' ? previous.global : next.global,
-      region: next.region.status === 'failed' && previous.region.status === 'ready' ? previous.region : next.region,
-      friends: next.friends.status === 'failed' && previous.friends.status === 'ready' ? previous.friends : next.friends
+      global: this.mergeBeatleaderDetail(next.global, previous.global),
+      region: this.mergeBeatleaderDetail(next.region, previous.region),
+      friends: this.mergeBeatleaderDetail(next.friends, previous.friends)
     };
+  }
+
+  private mergeBeatleaderDetail(
+    next: BeatleaderPlayerOverlayDetails['global'],
+    previous: BeatleaderPlayerOverlayDetails['global']
+  ): BeatleaderPlayerOverlayDetails['global'] {
+    if (next.status === 'ready') {
+      return next;
+    }
+
+    return previous.status === 'ready' ? previous : next;
   }
 
   private getEmptyBeatleaderDetails(): BeatleaderPlayerOverlayDetails {

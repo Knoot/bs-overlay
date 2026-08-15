@@ -37,6 +37,7 @@ export class OverlayFacadeService {
   private progressRafId: number | null = null;
   private isFetchingBL = false;
   private pendingBeatleaderRefresh = false;
+  private pendingBeatleaderNextDetailsRefresh = false;
   private isFetchingSS = false;
   private currentMapHash = '';
   private currentMapDifficulty = '';
@@ -119,6 +120,9 @@ export class OverlayFacadeService {
     const proxyChanged = this.config.customProxy !== previousConfig.customProxy;
     const beatLeaderProfileChanged =
       this.config.blId !== previousConfig.blId || this.config.showBL !== previousConfig.showBL || proxyChanged;
+    const beatLeaderNextDetailsMissing =
+      (!previousConfig.showBLNextGlobal && this.config.showBLNextGlobal && !this.dom.hasBeatleaderNextGlobal()) ||
+      (!previousConfig.showBLNextRegion && this.config.showBLNextRegion && !this.dom.hasBeatleaderNextRegion());
     const beatLeaderRefreshChanged =
       beatLeaderProfileChanged ||
       this.config.blProfileRefreshStrategy !== previousConfig.blProfileRefreshStrategy ||
@@ -178,6 +182,8 @@ export class OverlayFacadeService {
 
     if (beatLeaderProfileChanged && this.shouldShowBeatLeaderMenu()) {
       this.requestBeatleaderRefresh('settings');
+    } else if (beatLeaderNextDetailsMissing && this.shouldShowBeatLeaderMenu()) {
+      this.requestBeatleaderNextDetailsRefresh('settings-next-ranks-missing');
     }
     if (scoreSaberProfileChanged && this.shouldShowScoreSaberMenu()) {
       void this.fetchSS();
@@ -660,6 +666,21 @@ export class OverlayFacadeService {
     void this.fetchBL(reason);
   }
 
+  private requestBeatleaderNextDetailsRefresh(reason: string): void {
+    if (!this.shouldShowBeatLeaderMenu()) {
+      this.debug.show(`BL next details refresh skipped: hidden (${reason})`, this.config.showDebugUI);
+      return;
+    }
+
+    if (this.isFetchingBL) {
+      this.pendingBeatleaderNextDetailsRefresh = true;
+      this.debug.show(`BL next details refresh queued: ${reason}`, this.config.showDebugUI);
+      return;
+    }
+
+    void this.fetchBeatleaderNextDetails(reason);
+  }
+
   private async fetchBL(reason = 'manual'): Promise<void> {
     if (!this.shouldShowBeatLeaderMenu()) {
       return;
@@ -702,11 +723,60 @@ export class OverlayFacadeService {
       this.debug.show(`BL Error: ${message}`, this.config.showDebugUI);
     } finally {
       this.isFetchingBL = false;
+      this.flushPendingBeatleaderRefresh();
+    }
+  }
 
-      if (this.pendingBeatleaderRefresh) {
-        this.pendingBeatleaderRefresh = false;
-        window.setTimeout(() => this.requestBeatleaderRefresh('queued-score-event'), OverlayFacadeService.BEATLEADER_QUEUED_REFRESH_DELAY_MS);
-      }
+  private async fetchBeatleaderNextDetails(reason: string): Promise<void> {
+    const player = this.dom.getBeatleaderPlayer();
+
+    if (!player) {
+      this.requestBeatleaderRefresh(`${reason}-profile-missing`);
+      return;
+    }
+
+    const includeGlobal = this.config.showBLNextGlobal && !this.dom.hasBeatleaderNextGlobal();
+    const includeRegion = this.config.showBLNextRegion && !this.dom.hasBeatleaderNextRegion();
+
+    if (!includeGlobal && !includeRegion) {
+      this.dom.applyModules(this.config);
+      return;
+    }
+
+    this.isFetchingBL = true;
+    this.debug.show(`BL next details refresh started: ${reason}`, this.config.showDebugUI);
+
+    try {
+      const details = await this.beatleader.fetchPlayerDetails(player, {
+        includeGlobal,
+        includeRegion,
+        includeFriends: false
+      });
+      this.dom.renderBLDetails(details, this.config);
+      this.showBeatleaderDetailsDebug(details);
+      this.debug.show('BL next details loaded successfully', this.config.showDebugUI);
+    } catch (error) {
+      this.debug.show(`BL next details error: ${this.describeError(error)}`, this.config.showDebugUI);
+    } finally {
+      this.isFetchingBL = false;
+      this.flushPendingBeatleaderRefresh();
+    }
+  }
+
+  private flushPendingBeatleaderRefresh(): void {
+    if (this.pendingBeatleaderRefresh) {
+      this.pendingBeatleaderRefresh = false;
+      this.pendingBeatleaderNextDetailsRefresh = false;
+      window.setTimeout(() => this.requestBeatleaderRefresh('queued-score-event'), OverlayFacadeService.BEATLEADER_QUEUED_REFRESH_DELAY_MS);
+      return;
+    }
+
+    if (this.pendingBeatleaderNextDetailsRefresh) {
+      this.pendingBeatleaderNextDetailsRefresh = false;
+      window.setTimeout(
+        () => this.requestBeatleaderNextDetailsRefresh('queued-next-details'),
+        OverlayFacadeService.BEATLEADER_QUEUED_REFRESH_DELAY_MS
+      );
     }
   }
 
