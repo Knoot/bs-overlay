@@ -91,7 +91,7 @@ export class OverlayDomService {
       ppPredictorSs: this.mustGet('pp-predictor-ss'),
       // blNextFriendsRow: this.mustGet('bl-next-friends-row'),
       // blNextFriends: this.mustGet('bl-next-friends'),
-      inputWs: this.mustGet('inp-ws') as HTMLInputElement,
+      inputGameDataSource: this.mustGet('inp-game-data-source') as HTMLSelectElement,
       inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
       inputScale: this.mustGet('inp-scale') as HTMLInputElement,
       inputProfileScale: this.mustGet('inp-profile-scale') as HTMLInputElement,
@@ -196,7 +196,7 @@ export class OverlayDomService {
   }
 
   populateInputs(config: OverlayConfig): void {
-    this.elements.inputWs.value = config.ws;
+    this.elements.inputGameDataSource.value = config.gameDataSource;
     this.elements.inputTheme.value = config.theme;
     this.elements.inputScale.value = String(config.scale);
     this.elements.inputProfileScale.value = String(config.profileScale);
@@ -250,7 +250,9 @@ export class OverlayDomService {
 
     return {
       ...currentConfig,
-      ws: this.elements.inputWs.value.trim() || 'ws://127.0.0.1:2947/socket',
+      gameDataSource: this.configService.isGameDataSource(this.elements.inputGameDataSource.value)
+        ? this.elements.inputGameDataSource.value
+        : currentConfig.gameDataSource,
       customProxy: this.elements.inputCustomProxy.value.trim(),
       scale: this.configService.clampScale(Number.parseFloat(this.elements.inputScale.value)),
       profileScale: this.configService.clampScale(Number.parseFloat(this.elements.inputProfileScale.value)),

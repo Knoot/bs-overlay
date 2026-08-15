@@ -3,6 +3,7 @@ import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
 import {
   BeatleaderMapRatings,
   BeatleaderPlayerOverlayDetails,
+  GameDataService,
   MapInfoPayload,
   OverlayConfig,
   PpPredictorEntry,
@@ -12,6 +13,7 @@ import {
   WsPayload
 } from '../models/overlay.models';
 import { BeatleaderService } from './beatleader.service';
+import { DataPullerSocketService } from './data-puller-socket.service';
 import { OverlayConfigService } from './overlay-config.service';
 import { OverlayDomService } from './overlay-dom.service';
 import { OverlaySocketService } from './overlay-socket.service';
@@ -59,7 +61,8 @@ export class OverlayFacadeService {
     private readonly dom: OverlayDomService,
     private readonly beatleader: BeatleaderService,
     private readonly scoresaber: ScoresaberService,
-    private readonly socket: OverlaySocketService
+    private readonly bsPlusSocket: OverlaySocketService,
+    private readonly dataPullerSocket: DataPullerSocketService
   ) {}
 
   init(): void {
@@ -78,7 +81,7 @@ export class OverlayFacadeService {
     this.dom.resetMapRatings();
     this.dom.resetSSStars();
     this.dom.resetPpPredictor();
-    this.connectWS();
+    this.connectGameDataSource();
     this.connectPpPredictor();
     this.connectBeatleaderScoresSocket();
     this.startBeatleaderProfileRefreshInterval();
@@ -96,7 +99,8 @@ export class OverlayFacadeService {
   destroy(): void {
     document.removeEventListener('keydown', this.keydownHandler);
     this.stopProgressLoop();
-    this.socket.destroy();
+    this.bsPlusSocket.destroy();
+    this.dataPullerSocket.destroy();
     this.disconnectBeatleaderScoresSocket();
     this.stopBeatleaderProfileRefreshInterval();
     this.stopScoresaberProfileRefreshInterval();
@@ -106,7 +110,7 @@ export class OverlayFacadeService {
   saveSettings(): void {
     const previousConfig = this.config;
     this.config = this.dom.readFormConfig(this.config);
-    const wsChanged = this.config.ws !== previousConfig.ws;
+    const gameDataSourceChanged = this.config.gameDataSource !== previousConfig.gameDataSource;
     const proxyChanged = this.config.customProxy !== previousConfig.customProxy;
     const beatLeaderProfileChanged =
       this.config.blId !== previousConfig.blId || this.config.showBL !== previousConfig.showBL || proxyChanged;
@@ -146,8 +150,8 @@ export class OverlayFacadeService {
     this.dom.applyGlow(this.config);
     this.dom.applyPanelBackgrounds(this.config);
 
-    if (wsChanged) {
-      this.connectWS();
+    if (gameDataSourceChanged) {
+      this.connectGameDataSource();
     }
 
     if (this.config.showPpPredictor && !previousConfig.showPpPredictor) {
@@ -191,7 +195,7 @@ export class OverlayFacadeService {
     this.dom.restoreDefaultProxyConfig();
   }
 
-  private connectWS(): void {
+  private connectGameDataSource(): void {
     this.isWsConnected = false;
     const showRankMenu = this.shouldShowRankMenuNow();
     this.isGamePlaying = false;
@@ -207,13 +211,18 @@ export class OverlayFacadeService {
     this.dom.resetGameOverlay(this.config.lang);
     this.dom.setViewMode('menu', showRankMenu);
     this.dom.setAppVisible(showRankMenu);
-    this.dom.showDebug(`Connecting to ${this.config.ws}...`, this.config.showDebugUI);
+    this.dom.showDebug(`Connecting to ${this.getGameDataSourceName()}...`, this.config.showDebugUI);
 
-    this.socket.connect(this.config.ws, {
+    this.bsPlusSocket.destroy();
+    this.dataPullerSocket.destroy();
+
+    this.getGameDataService().connect({
       onOpen: () => {
         this.isWsConnected = true;
-        this.dom.showDebug('WebSocket Connected', this.config.showDebugUI);
-        this.setMode('menu');
+        this.dom.showDebug(`${this.getGameDataSourceName()} connected`, this.config.showDebugUI);
+        if (!this.isGamePlaying) {
+          this.setMode('menu');
+        }
       },
       onMessage: (payload) => this.handleWsMessage(payload),
       onDisconnect: (error) => {
@@ -223,9 +232,17 @@ export class OverlayFacadeService {
         this.dom.setViewMode('menu', showRankMenu);
         this.dom.setAppVisible(showRankMenu);
         const suffix = error ? ` (${this.describeError(error)})` : '';
-        this.dom.showDebug(`WS Lost. Reconnecting...${suffix}`, this.config.showDebugUI);
+        this.dom.showDebug(`${this.getGameDataSourceName()} lost. Reconnecting...${suffix}`, this.config.showDebugUI);
       }
     });
+  }
+
+  private getGameDataService(): GameDataService {
+    return this.config.gameDataSource === 'data-puller' ? this.dataPullerSocket : this.bsPlusSocket;
+  }
+
+  private getGameDataSourceName(): string {
+    return this.config.gameDataSource === 'data-puller' ? 'DataPuller' : 'BS+ Song Overlay';
   }
 
   private connectPpPredictor(): void {
@@ -516,7 +533,7 @@ export class OverlayFacadeService {
       diffColor: diffStyle.color,
       diffShadow: diffStyle.shadow,
       bpm: mapInfo.BPM || 0,
-      coverSrc: mapInfo.coverRaw ? `data:image/png;base64,${mapInfo.coverRaw}` : PLACEHOLDER_COVER
+      coverSrc: this.resolveCoverSource(mapInfo.coverRaw)
     });
 
     this.duration = (mapInfo.duration || 0) / 1000;
@@ -573,6 +590,20 @@ export class OverlayFacadeService {
         this.startProgressLoop();
       }
     }
+  }
+
+  private resolveCoverSource(cover: string | undefined): string {
+    const value = String(cover ?? '').trim();
+
+    if (!value) {
+      return PLACEHOLDER_COVER;
+    }
+
+    if (/^(data:image\/|https?:\/\/)/i.test(value)) {
+      return value;
+    }
+
+    return `data:image/png;base64,${value}`;
   }
 
   private async fetchBSR(hash: string): Promise<void> {

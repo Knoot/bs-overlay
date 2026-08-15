@@ -12,11 +12,12 @@ export type Layout =
 export type ViewMode = 'menu' | 'playing';
 export type RankIdentitySource = 'beatleader' | 'scoresaber';
 export type BeatleaderProfileRefreshStrategy = 'score' | 'interval';
+export type GameDataSource = 'bs-plus' | 'data-puller';
 
 export interface OverlayConfig {
   lang: Lang;
   theme: Theme;
-  ws: string;
+  gameDataSource: GameDataSource;
   customProxy: string;
   layout: Layout;
   scale: number;
@@ -217,7 +218,7 @@ export interface OverlayElements {
   ppPredictorSs: HTMLElement;
   // blNextFriendsRow: HTMLElement;
   // blNextFriends: HTMLElement;
-  inputWs: HTMLInputElement;
+  inputGameDataSource: HTMLSelectElement;
   inputTheme: HTMLSelectElement;
   inputScale: HTMLInputElement;
   inputProfileScale: HTMLInputElement;
@@ -287,6 +288,11 @@ export interface SocketCallbacks {
   onOpen: () => void;
   onMessage: (payload: WsPayload) => void;
   onDisconnect: (error?: unknown) => void;
+}
+
+export interface GameDataService {
+  connect(callbacks: SocketCallbacks): void;
+  destroy(): void;
 }
 
 export interface PpPredictorEntry {

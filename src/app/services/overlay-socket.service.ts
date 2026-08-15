@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
-import { SocketCallbacks, WsPayload } from '../models/overlay.models';
+import { GameDataService, SocketCallbacks, WsPayload } from '../models/overlay.models';
 
 @Injectable({ providedIn: 'root' })
-export class OverlaySocketService {
+export class OverlaySocketService implements GameDataService {
+  private static readonly URL = 'ws://127.0.0.1:2947/socket';
   private socket: WebSocket | null = null;
   private reconnectAttempts = 0;
   private reconnectTimeout: number | null = null;
   private reconnectScheduled = false;
 
-  connect(url: string, callbacks: SocketCallbacks): void {
+  connect(callbacks: SocketCallbacks): void {
     this.cleanupSocket();
 
     if (this.reconnectTimeout !== null) {
@@ -21,9 +22,9 @@ export class OverlaySocketService {
     let socket: WebSocket;
 
     try {
-      socket = new WebSocket(url);
+      socket = new WebSocket(OverlaySocketService.URL);
     } catch (error) {
-      this.scheduleReconnect(url, callbacks);
+      this.scheduleReconnect(callbacks);
       callbacks.onDisconnect(error);
       return;
     }
@@ -39,7 +40,7 @@ export class OverlaySocketService {
 
     const disconnectHandler = (eventOrError: Event) => {
       if (socket !== this.socket) return;
-      this.scheduleReconnect(url, callbacks);
+      this.scheduleReconnect(callbacks);
       callbacks.onDisconnect(eventOrError);
     };
 
@@ -83,7 +84,7 @@ export class OverlaySocketService {
     this.socket = null;
   }
 
-  private scheduleReconnect(url: string, callbacks: SocketCallbacks): void {
+  private scheduleReconnect(callbacks: SocketCallbacks): void {
     if (this.reconnectScheduled) {
       return;
     }
@@ -98,7 +99,7 @@ export class OverlaySocketService {
 
     this.reconnectTimeout = window.setTimeout(() => {
       this.reconnectScheduled = false;
-      this.connect(url, callbacks);
+      this.connect(callbacks);
     }, delay);
   }
 }

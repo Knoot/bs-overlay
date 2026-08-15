@@ -25,8 +25,11 @@
     </div>
 
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;">WebSocket URL</label>
-      <input type="text" id="inp-ws" placeholder="ws://127.0.0.1:2947/socket">
+      <label style="font-size: 12px; color: #ccc;" data-i18n="gameDataSourceLabel">Game Data Source</label>
+      <select id="inp-game-data-source">
+        <option value="bs-plus" data-i18n="gameDataSourceBsPlus">BS+ Song Overlay</option>
+        <option value="data-puller" data-i18n="gameDataSourceDataPuller">DataPuller</option>
+      </select>
     </div>
     <div class="setting-row">
       <label style="font-size: 12px; color: #ccc;" data-i18n="customProxyLabel" data-i18n-title="proxyTooltip" title="Proxy prefixes are used when direct API requests are blocked by the browser.">Custom Proxy Prefix</label>

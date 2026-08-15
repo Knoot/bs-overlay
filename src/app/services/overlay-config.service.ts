@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DEFAULT_CONFIG, I18N, STORAGE_KEY } from '../constants/overlay.constants';
-import { BeatleaderProfileRefreshStrategy, Lang, Layout, OverlayConfig, Theme } from '../models/overlay.models';
+import { BeatleaderProfileRefreshStrategy, GameDataSource, Lang, Layout, OverlayConfig, Theme } from '../models/overlay.models';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayConfigService {
@@ -23,6 +23,9 @@ export class OverlayConfigService {
     }
 
     this.config = { ...this.config, ...this.readQueryParams() };
+    this.config.gameDataSource = this.isGameDataSource(this.config.gameDataSource)
+      ? this.config.gameDataSource
+      : DEFAULT_CONFIG.gameDataSource;
     this.config.scale = this.clampScale(Number.parseFloat(String(this.config.scale)));
     this.config.profileScale = this.clampScale(Number.parseFloat(String(this.config.profileScale)));
     this.config.blProfileRefreshStrategy = this.isBeatleaderProfileRefreshStrategy(this.config.blProfileRefreshStrategy)
@@ -95,6 +98,10 @@ export class OverlayConfigService {
     return value === 'score' || value === 'interval';
   }
 
+  isGameDataSource(value: string): value is GameDataSource {
+    return value === 'bs-plus' || value === 'data-puller';
+  }
+
   normalizeProfileRefreshMinutes(value: unknown): number {
     const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
     return [5, 10, 15, 30].includes(parsed) ? parsed : 10;
@@ -105,7 +112,7 @@ export class OverlayConfigService {
 
     params.set('lang', config.lang);
     params.set('theme', config.theme);
-    params.set('ws', config.ws);
+    params.set('gameDataSource', config.gameDataSource);
     params.set('customProxy', config.customProxy);
     params.set('layout', config.layout);
     params.set('scale', String(this.clampScale(config.scale)));
@@ -156,7 +163,7 @@ export class OverlayConfigService {
     const partial: Partial<OverlayConfig> = {};
     const lang = params.get('lang');
     const theme = params.get('theme');
-    const ws = params.get('ws');
+    const gameDataSource = params.get('gameDataSource');
     const customProxy = params.get('customProxy');
     const layout = params.get('layout');
     const scale = params.get('scale');
@@ -177,8 +184,8 @@ export class OverlayConfigService {
       partial.theme = theme;
     }
 
-    if (ws) {
-      partial.ws = ws;
+    if (gameDataSource && this.isGameDataSource(gameDataSource)) {
+      partial.gameDataSource = gameDataSource;
     }
 
     if (customProxy !== null) {
