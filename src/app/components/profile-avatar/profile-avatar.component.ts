@@ -1,17 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { AnimatedNumberDirective } from '../../directives/animated-number.directive';
 import { OverlayStateService } from '../../services/overlay-state.service';
 
 @Component({
-  selector: 'app-hp-bar',
+  selector: 'app-profile-avatar',
   standalone: true,
-  imports: [CommonModule, AnimatedNumberDirective],
-  templateUrl: './hp-bar.component.html',
+  imports: [CommonModule],
+  templateUrl: './profile-avatar.component.html',
   styles: [':host { display: contents; }']
 })
-export class HpBarComponent {
+export class ProfileAvatarComponent {
   private readonly state = inject(OverlayStateService);
-  readonly score = this.state.score;
+  readonly profile = this.state.profile;
   readonly ui = this.state.ui;
 }

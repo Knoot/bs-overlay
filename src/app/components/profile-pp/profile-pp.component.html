@@ -1,0 +1,19 @@
+<div class="rank-stat-row">
+  <span class="rank-stat-label">PP:</span>
+  <span id="rank-pp-bl-item" class="rank-service-value" [style.display]="profile().beatleader.visible ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+    @if (profile().beatleader.pp !== null) {
+      <span id="rank-pp-bl" [appAnimatedNumber]="profile().beatleader.pp ?? 0" animatedNumberFormat="pp0"></span>
+    } @else {
+      <span id="rank-pp-bl">-- pp</span>
+    }
+  </span>
+  <span id="rank-pp-ss-item" class="rank-service-value" [style.display]="profile().scoresaber.visible ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+    @if (profile().scoresaber.pp !== null) {
+      <span id="rank-pp-ss" [appAnimatedNumber]="profile().scoresaber.pp ?? 0" animatedNumberFormat="pp0"></span>
+    } @else {
+      <span id="rank-pp-ss">-- pp</span>
+    }
+  </span>
+</div>

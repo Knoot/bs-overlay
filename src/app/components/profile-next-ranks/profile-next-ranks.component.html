@@ -1,0 +1,35 @@
+<div id="rank-next-global-row" class="rank-stat-row bl-next-line" [style.display]="profile().showNextGlobal ? 'flex' : 'none'">
+  <span class="rank-stat-label">Next Global:</span>
+  <span class="rank-service-value">
+    <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+    <span id="rank-next-global" [title]="profile().nextGlobal.text">
+      @if (profile().nextGlobal.isReady) {
+        @if (profile().nextGlobal.hasPp) {
+          <span class="bl-next-pp">{{ profile().nextGlobal.ppText }}</span>
+          <span class="bl-next-separator"> • </span>
+        }
+        <span class="bl-next-player-name">{{ profile().nextGlobal.name }}</span>
+      } @else {
+        {{ profile().nextGlobal.text }}
+      }
+    </span>
+  </span>
+</div>
+
+<div id="rank-next-region-row" class="rank-stat-row bl-next-line" [style.display]="profile().showNextRegion ? 'flex' : 'none'">
+  <span class="rank-stat-label">Next Region:</span>
+  <span class="rank-service-value">
+    <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+    <span id="rank-next-region" [title]="profile().nextRegion.text">
+      @if (profile().nextRegion.isReady) {
+        @if (profile().nextRegion.hasPp) {
+          <span class="bl-next-pp">{{ profile().nextRegion.ppText }}</span>
+          <span class="bl-next-separator"> • </span>
+        }
+        <span class="bl-next-player-name">{{ profile().nextRegion.name }}</span>
+      } @else {
+        {{ profile().nextRegion.text }}
+      }
+    </span>
+  </span>
+</div>

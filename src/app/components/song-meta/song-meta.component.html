@@ -1,0 +1,13 @@
+<div id="meta-line" [style.display]="ui().metaDisplay">
+  <span
+    id="difficulty"
+    [style.--diff-color]="song().diffColor"
+    [style.--diff-shadow]="song().diffShadow"
+    [innerHTML]="difficultyHtml()"
+  ></span>
+  <span id="bpm">{{ bpmText() }}</span>
+</div>
+<div id="bsr-line" [style.display]="ui().bsrDisplay" [style.justify-content]="ui().bsrJustifyContent">
+  <span id="key">{{ song().bsrText }}</span>
+  <span id="map-date">{{ song().mapDateText }}</span>
+</div>

@@ -6,22 +6,32 @@ import {
   ViewEncapsulation,
   inject
 } from '@angular/core';
-import { BeatleaderMenuComponent } from './components/beatleader-menu/beatleader-menu.component';
-import { PlayingOverlayComponent } from './components/playing-overlay/playing-overlay.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
+import { OverlayConfig } from './models/overlay.models';
+import { OverlayThemeHostComponent } from './components/themes/overlay-theme-host/overlay-theme-host.component';
 import { OverlayFacadeService } from './services/overlay-facade.service';
+import { OverlayStateService } from './services/overlay-state.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, BeatleaderMenuComponent, PlayingOverlayComponent, SettingsModalComponent],
+  imports: [CommonModule, OverlayThemeHostComponent, SettingsModalComponent],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css', './overlay-theme.css', './overlay-base.css', './overlay-settings.css'],
+  styleUrls: [
+    './app.component.css',
+    './overlay-theme.css',
+    './components/themes/cyberpunk/cyberpunk-theme.css',
+    './components/themes/sunset/sunset-theme.css',
+    './overlay-base.css',
+    './overlay-settings.css'
+  ],
   encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
   private readonly overlayFacade = inject(OverlayFacadeService);
-  activeSettingsTab: 'general' | 'beatleader' | 'song' = 'general';
+  private readonly state = inject(OverlayStateService);
+  readonly ui = this.state.ui;
+  readonly settings = this.state.settings;
 
   ngAfterViewInit(): void {
     this.overlayFacade.init();
@@ -31,15 +41,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.overlayFacade.destroy();
   }
 
-  saveSettings(): void {
-    this.overlayFacade.saveSettings();
-  }
-
-  restoreProxySettings(): void {
-    this.overlayFacade.restoreProxySettings();
-  }
-
-  setSettingsTab(tab: 'general' | 'beatleader' | 'song'): void {
-    this.activeSettingsTab = tab;
+  saveSettings(config: OverlayConfig): void {
+    this.overlayFacade.saveSettings(config);
   }
 }

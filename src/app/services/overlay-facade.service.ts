@@ -15,8 +15,10 @@ import {
 import { BeatleaderService } from './beatleader.service';
 import { DataPullerSocketService } from './data-puller-socket.service';
 import { OverlayConfigService } from './overlay-config.service';
+import { OverlayDebugService } from './overlay-debug.service';
 import { OverlayDomService } from './overlay-dom.service';
 import { OverlaySocketService } from './overlay-socket.service';
+import { OverlayStateService } from './overlay-state.service';
 import { ScoresaberService } from './scoresaber.service';
 
 @Injectable({ providedIn: 'root' })
@@ -52,13 +54,15 @@ export class OverlayFacadeService {
   private readonly ssStarsCache = new Map<string, number | null>();
   private readonly keydownHandler = (event: KeyboardEvent) => {
     if (event.key === 'F2') {
-      this.dom.toggleSettingsModal();
+      this.state.toggleSettingsVisible();
     }
   };
 
   constructor(
     private readonly configService: OverlayConfigService,
     private readonly dom: OverlayDomService,
+    private readonly debug: OverlayDebugService,
+    private readonly state: OverlayStateService,
     private readonly beatleader: BeatleaderService,
     private readonly scoresaber: ScoresaberService,
     private readonly bsPlusSocket: OverlaySocketService,
@@ -66,12 +70,12 @@ export class OverlayFacadeService {
   ) {}
 
   init(): void {
-    this.dom.initializeElements();
+    this.debug.initializeElement();
     this.dom.setupInitialView();
     this.config = this.configService.loadConfig();
+    this.state.setSettingsConfig(this.config);
     this.beatleader.setCustomProxy(this.config.customProxy);
     this.scoresaber.setCustomProxy(this.config.customProxy);
-    this.dom.populateInputs(this.config);
     this.dom.applyTheme(this.config);
     this.dom.applyLanguage(this.config);
     this.dom.applyModules(this.config);
@@ -105,11 +109,12 @@ export class OverlayFacadeService {
     this.stopBeatleaderProfileRefreshInterval();
     this.stopScoresaberProfileRefreshInterval();
     this.disconnectPpPredictor();
+    this.dom.cancelPendingLayout();
   }
 
-  saveSettings(): void {
+  saveSettings(nextConfig: OverlayConfig): void {
     const previousConfig = this.config;
-    this.config = this.dom.readFormConfig(this.config);
+    this.config = this.normalizeSettingsConfig(nextConfig, previousConfig);
     const gameDataSourceChanged = this.config.gameDataSource !== previousConfig.gameDataSource;
     const proxyChanged = this.config.customProxy !== previousConfig.customProxy;
     const beatLeaderProfileChanged =
@@ -140,6 +145,7 @@ export class OverlayFacadeService {
 
     this.configService.setConfig(this.config);
     this.configService.persistConfig();
+    this.state.setSettingsConfig(this.config);
     this.configService.syncQueryParams(this.config);
     this.beatleader.setCustomProxy(this.config.customProxy);
     this.scoresaber.setCustomProxy(this.config.customProxy);
@@ -191,8 +197,30 @@ export class OverlayFacadeService {
     }
   }
 
-  restoreProxySettings(): void {
-    this.dom.restoreDefaultProxyConfig();
+  private normalizeSettingsConfig(nextConfig: OverlayConfig, previousConfig: OverlayConfig): OverlayConfig {
+    return {
+      ...previousConfig,
+      ...nextConfig,
+      lang: this.configService.isLang(nextConfig.lang) ? nextConfig.lang : previousConfig.lang,
+      theme: this.configService.isTheme(nextConfig.theme) ? nextConfig.theme : previousConfig.theme,
+      gameDataSource: this.configService.isGameDataSource(nextConfig.gameDataSource)
+        ? nextConfig.gameDataSource
+        : previousConfig.gameDataSource,
+      layout: this.configService.isLayout(nextConfig.layout) ? nextConfig.layout : previousConfig.layout,
+      customProxy: nextConfig.customProxy.trim(),
+      scale: this.configService.clampScale(Number.parseFloat(String(nextConfig.scale))),
+      profileScale: this.configService.clampScale(Number.parseFloat(String(nextConfig.profileScale))),
+      blId: nextConfig.blId.trim(),
+      ssId: nextConfig.ssId.trim(),
+      nameSource: nextConfig.nameSource === 'scoresaber' ? 'scoresaber' : 'beatleader',
+      avatarSource: nextConfig.avatarSource === 'scoresaber' ? 'scoresaber' : 'beatleader',
+      blProfileRefreshStrategy: this.configService.isBeatleaderProfileRefreshStrategy(nextConfig.blProfileRefreshStrategy)
+        ? nextConfig.blProfileRefreshStrategy
+        : previousConfig.blProfileRefreshStrategy,
+      blProfileRefreshMinutes: this.configService.normalizeProfileRefreshMinutes(nextConfig.blProfileRefreshMinutes),
+      ssProfileRefreshMinutes: this.configService.normalizeProfileRefreshMinutes(nextConfig.ssProfileRefreshMinutes),
+      showBLNextFriends: previousConfig.showBLNextFriends
+    };
   }
 
   private connectGameDataSource(): void {
@@ -211,7 +239,7 @@ export class OverlayFacadeService {
     this.dom.resetGameOverlay(this.config.lang);
     this.dom.setViewMode('menu', showRankMenu);
     this.dom.setAppVisible(showRankMenu);
-    this.dom.showDebug(`Connecting to ${this.getGameDataSourceName()}...`, this.config.showDebugUI);
+    this.debug.show(`Connecting to ${this.getGameDataSourceName()}...`, this.config.showDebugUI);
 
     this.bsPlusSocket.destroy();
     this.dataPullerSocket.destroy();
@@ -219,7 +247,7 @@ export class OverlayFacadeService {
     this.getGameDataService().connect({
       onOpen: () => {
         this.isWsConnected = true;
-        this.dom.showDebug(`${this.getGameDataSourceName()} connected`, this.config.showDebugUI);
+        this.debug.show(`${this.getGameDataSourceName()} connected`, this.config.showDebugUI);
         if (!this.isGamePlaying) {
           this.setMode('menu');
         }
@@ -232,7 +260,7 @@ export class OverlayFacadeService {
         this.dom.setViewMode('menu', showRankMenu);
         this.dom.setAppVisible(showRankMenu);
         const suffix = error ? ` (${this.describeError(error)})` : '';
-        this.dom.showDebug(`${this.getGameDataSourceName()} lost. Reconnecting...${suffix}`, this.config.showDebugUI);
+        this.debug.show(`${this.getGameDataSourceName()} lost. Reconnecting...${suffix}`, this.config.showDebugUI);
       }
     });
   }
@@ -259,7 +287,7 @@ export class OverlayFacadeService {
       socket = new WebSocket(url);
     } catch (error) {
       this.schedulePpPredictorReconnect();
-      this.dom.showDebug(`PP Predictor error: ${this.describeError(error)}`, this.config.showDebugUI);
+      this.debug.show(`PP Predictor error: ${this.describeError(error)}`, this.config.showDebugUI);
       return;
     }
 
@@ -267,7 +295,7 @@ export class OverlayFacadeService {
 
     socket.onopen = () => {
       if (this.ppPredictorSocket !== socket) return;
-      this.dom.showDebug('PP Predictor connected', this.config.showDebugUI);
+      this.debug.show('PP Predictor connected', this.config.showDebugUI);
     };
 
     socket.onmessage = (event) => {
@@ -276,7 +304,7 @@ export class OverlayFacadeService {
       try {
         this.handlePpPredictorMessage(JSON.parse(event.data) as PpPredictorPayload);
       } catch (error) {
-        this.dom.showDebug(`PP Predictor handler error: ${this.describeError(error)}`, this.config.showDebugUI);
+        this.debug.show(`PP Predictor handler error: ${this.describeError(error)}`, this.config.showDebugUI);
       }
     };
 
@@ -286,7 +314,7 @@ export class OverlayFacadeService {
       this.dom.resetPpPredictor();
       this.dom.applyModules(this.config);
       this.schedulePpPredictorReconnect();
-      this.dom.showDebug(`PP Predictor disconnected: ${this.describeError(eventOrError)}`, this.config.showDebugUI);
+      this.debug.show(`PP Predictor disconnected: ${this.describeError(eventOrError)}`, this.config.showDebugUI);
     };
 
     socket.onclose = disconnectHandler;
@@ -340,7 +368,7 @@ export class OverlayFacadeService {
       socket = new WebSocket(OverlayFacadeService.BEATLEADER_SCORES_SOCKET_URL);
     } catch (error) {
       this.scheduleBeatleaderScoresReconnect();
-      this.dom.showDebug(`BL scores socket error: ${this.describeError(error)}`, this.config.showDebugUI);
+      this.debug.show(`BL scores socket error: ${this.describeError(error)}`, this.config.showDebugUI);
       return;
     }
 
@@ -348,7 +376,7 @@ export class OverlayFacadeService {
 
     socket.onopen = () => {
       if (this.beatleaderScoresSocket !== socket) return;
-      this.dom.showDebug('BL scores socket connected', this.config.showDebugUI);
+      this.debug.show('BL scores socket connected', this.config.showDebugUI);
     };
 
     socket.onmessage = (event) => {
@@ -357,7 +385,7 @@ export class OverlayFacadeService {
       try {
         this.handleBeatleaderScoresMessage(this.parseSocketMessage(event.data));
       } catch (error) {
-        this.dom.showDebug(`BL scores socket handler error: ${this.describeError(error)}`, this.config.showDebugUI);
+        this.debug.show(`BL scores socket handler error: ${this.describeError(error)}`, this.config.showDebugUI);
       }
     };
 
@@ -365,7 +393,7 @@ export class OverlayFacadeService {
       if (this.beatleaderScoresSocket !== socket) return;
       this.beatleaderScoresSocket = null;
       this.scheduleBeatleaderScoresReconnect();
-      this.dom.showDebug(`BL scores socket disconnected: ${this.describeError(eventOrError)}`, this.config.showDebugUI);
+      this.debug.show(`BL scores socket disconnected: ${this.describeError(eventOrError)}`, this.config.showDebugUI);
     };
 
     socket.onclose = disconnectHandler;
@@ -414,7 +442,7 @@ export class OverlayFacadeService {
       return;
     }
 
-    this.dom.showDebug('BL score event matched current profile', this.config.showDebugUI);
+    this.debug.show('BL score event matched current profile', this.config.showDebugUI);
     this.requestBeatleaderRefresh('score-event');
   }
 
@@ -518,7 +546,7 @@ export class OverlayFacadeService {
         this.startProgressLoop();
       }
     } catch (error) {
-      this.dom.showDebug(`WS handler error: ${this.describeError(error)}`, this.config.showDebugUI);
+      this.debug.show(`WS handler error: ${this.describeError(error)}`, this.config.showDebugUI);
     }
   }
 
@@ -619,13 +647,13 @@ export class OverlayFacadeService {
 
   private requestBeatleaderRefresh(reason: string): void {
     if (!this.shouldShowBeatLeaderMenu()) {
-      this.dom.showDebug(`BL refresh skipped: hidden (${reason})`, this.config.showDebugUI);
+      this.debug.show(`BL refresh skipped: hidden (${reason})`, this.config.showDebugUI);
       return;
     }
 
     if (this.isFetchingBL) {
       this.pendingBeatleaderRefresh = true;
-      this.dom.showDebug(`BL refresh queued: ${reason}`, this.config.showDebugUI);
+      this.debug.show(`BL refresh queued: ${reason}`, this.config.showDebugUI);
       return;
     }
 
@@ -638,7 +666,7 @@ export class OverlayFacadeService {
     }
 
     this.isFetchingBL = true;
-    this.dom.showDebug(`BL refresh started: ${reason}`, this.config.showDebugUI);
+    this.debug.show(`BL refresh started: ${reason}`, this.config.showDebugUI);
 
     try {
       const result = await this.beatleader.fetchPlayer(this.config.blId, this.config.resolvedBlId, this.config.resolvedBlQuery, {
@@ -664,14 +692,14 @@ export class OverlayFacadeService {
       this.showBeatleaderDetailsDebug(result.details);
 
       if (result.bestMatchName) {
-        this.dom.showDebug(`BL best match: ${result.bestMatchName}`, this.config.showDebugUI);
+        this.debug.show(`BL best match: ${result.bestMatchName}`, this.config.showDebugUI);
       }
 
-      this.dom.showDebug('BL Profile Loaded Successfully!', this.config.showDebugUI);
+      this.debug.show('BL Profile Loaded Successfully!', this.config.showDebugUI);
     } catch (error) {
       const message = this.describeError(error);
       this.dom.resetBLDisplay(this.config.lang, message === 'Player not found' ? 'profileNotFound' : 'profileLoadError');
-      this.dom.showDebug(`BL Error: ${message}`, this.config.showDebugUI);
+      this.debug.show(`BL Error: ${message}`, this.config.showDebugUI);
     } finally {
       this.isFetchingBL = false;
 
@@ -684,11 +712,11 @@ export class OverlayFacadeService {
 
   private showBeatleaderDetailsDebug(details: BeatleaderPlayerOverlayDetails): void {
     if (details.global.status === 'failed') {
-      this.dom.showDebug('BL Next Global load failed', this.config.showDebugUI);
+      this.debug.show('BL Next Global load failed', this.config.showDebugUI);
     }
 
     if (details.region.status === 'failed') {
-      this.dom.showDebug('BL Next Region load failed', this.config.showDebugUI);
+      this.debug.show('BL Next Region load failed', this.config.showDebugUI);
     }
   }
 
@@ -717,14 +745,14 @@ export class OverlayFacadeService {
       this.dom.renderSSPlayer(result.player);
 
       if (result.bestMatchName) {
-        this.dom.showDebug(`SS best match: ${result.bestMatchName}`, this.config.showDebugUI);
+        this.debug.show(`SS best match: ${result.bestMatchName}`, this.config.showDebugUI);
       }
 
-      this.dom.showDebug('SS Profile Loaded Successfully!', this.config.showDebugUI);
+      this.debug.show('SS Profile Loaded Successfully!', this.config.showDebugUI);
     } catch (error) {
       const message = this.describeError(error);
       this.dom.resetSSDisplay(this.config.lang, message === 'Player not found' ? 'profileNotFound' : 'profileLoadError');
-      this.dom.showDebug(`SS Error: ${message}`, this.config.showDebugUI);
+      this.debug.show(`SS Error: ${message}`, this.config.showDebugUI);
     } finally {
       this.isFetchingSS = false;
     }
@@ -1032,7 +1060,7 @@ export class OverlayFacadeService {
     }
 
     const lookupKey = `${this.currentMapHash}|${this.currentMapDifficulty}|${this.currentMapMode}`;
-    const ratingsState = this.dom.elements.mapRatings.dataset['blState'];
+    const ratingsState = this.state.mapRatings().blState;
     const hasCachedResult = ratingsState === 'ready' || ratingsState === 'missing';
 
     if (!force && this.lastMapRatingsKey === lookupKey && hasCachedResult) {
@@ -1092,7 +1120,7 @@ export class OverlayFacadeService {
     }
 
     const lookupKey = `${this.currentMapHash}|${this.currentMapDifficulty}|${this.currentMapMode}`;
-    const starsState = this.dom.elements.mapRatings.dataset['ssState'];
+    const starsState = this.state.mapRatings().ssState;
     const hasCachedResult = starsState === 'ready' || starsState === 'missing';
 
     if (!force && this.lastSsStarsKey === lookupKey && hasCachedResult) {

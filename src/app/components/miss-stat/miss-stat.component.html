@@ -1,0 +1,10 @@
+<div class="stat-item">
+  <span class="label" id="miss-label" [style.display]="score().hasMissCount && score().missCount === 0 ? 'none' : ''">Miss</span>
+  <span class="val" id="miss-val">
+    @if (score().hasMissCount && score().missCount === 0) {
+      <span class="miss-fc-text">FC</span><span class="miss-fc-check" aria-hidden="true">✓</span>
+    } @else {
+      <span [appAnimatedNumber]="score().missCount" animatedNumberFormat="integer"></span>
+    }
+  </span>
+</div>

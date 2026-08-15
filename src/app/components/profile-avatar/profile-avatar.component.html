@@ -1,0 +1,8 @@
+<div
+  id="rank-avatar-wrapper"
+  class="avatar-glow-wrapper"
+  [class.active-glow]="ui().avatarGlow"
+  [style.display]="profile().avatarVisible ? 'block' : 'none'"
+>
+  <img id="rank-avatar" [src]="profile().avatarSrc" alt="Rank Avatar">
+</div>

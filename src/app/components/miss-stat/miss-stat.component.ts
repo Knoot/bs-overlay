@@ -4,14 +4,12 @@ import { AnimatedNumberDirective } from '../../directives/animated-number.direct
 import { OverlayStateService } from '../../services/overlay-state.service';
 
 @Component({
-  selector: 'app-hp-bar',
+  selector: 'app-miss-stat',
   standalone: true,
   imports: [CommonModule, AnimatedNumberDirective],
-  templateUrl: './hp-bar.component.html',
+  templateUrl: './miss-stat.component.html',
   styles: [':host { display: contents; }']
 })
-export class HpBarComponent {
-  private readonly state = inject(OverlayStateService);
-  readonly score = this.state.score;
-  readonly ui = this.state.ui;
+export class MissStatComponent {
+  readonly score = inject(OverlayStateService).score;
 }

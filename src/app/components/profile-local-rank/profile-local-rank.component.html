@@ -1,0 +1,11 @@
+<div class="rank-stat-row">
+  <span class="rank-stat-label">Local:</span>
+  <span id="rank-local-bl-item" class="rank-service-value" [style.display]="profile().beatleader.visible ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+    <span id="rank-local-bl">{{ profile().beatleader.localRankText }}</span>
+  </span>
+  <span id="rank-local-ss-item" class="rank-service-value" [style.display]="profile().scoresaber.visible ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+    <span id="rank-local-ss">{{ profile().scoresaber.localRankText }}</span>
+  </span>
+</div>

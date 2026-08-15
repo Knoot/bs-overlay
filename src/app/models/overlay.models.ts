@@ -126,6 +126,149 @@ export interface ScoreEventPayload {
   time?: number;
 }
 
+export interface OverlayScoreState {
+  hasMissCount: boolean;
+  accuracy: number;
+  combo: number;
+  missCount: number;
+  currentHealth: number;
+  grade: string;
+  gradeColor: string;
+}
+
+export interface OverlayProgressState {
+  currentTime: number;
+  duration: number;
+}
+
+export interface OverlayPpPredictorState {
+  visible: boolean;
+  beatleader: number | null;
+  scoresaber: number | null;
+}
+
+export interface OverlaySongState {
+  title: string;
+  artist: string;
+  difficultyHtml: string;
+  diffColor: string;
+  diffShadow: string;
+  bpm: number | null;
+  coverSrc: string;
+  bsrText: string;
+  mapDateText: string;
+}
+
+export type OverlayRatingLoadState = 'empty' | 'missing' | 'ready';
+
+export interface OverlayMapRatingsState {
+  blState: OverlayRatingLoadState;
+  ssState: OverlayRatingLoadState;
+  showBl: boolean;
+  showSs: boolean;
+  visible: boolean;
+  showBlBreakdown: boolean;
+  showTotalRow: boolean;
+  blStars: number | null;
+  blTech: number | null;
+  blAcc: number | null;
+  blPass: number | null;
+  ssStars: number | null;
+}
+
+export interface OverlayProfileServiceState {
+  visible: boolean;
+  globalRankText: string;
+  localRankText: string;
+  pp: number | null;
+}
+
+export interface OverlayProfileNeighborState {
+  text: string;
+  name: string;
+  ppText: string;
+  hasPp: boolean;
+  isReady: boolean;
+}
+
+export interface OverlayProfileState {
+  visible: boolean;
+  name: string;
+  avatarSrc: string;
+  avatarVisible: boolean;
+  beatleader: OverlayProfileServiceState;
+  scoresaber: OverlayProfileServiceState;
+  showNextGlobal: boolean;
+  showNextRegion: boolean;
+  nextGlobal: OverlayProfileNeighborState;
+  nextRegion: OverlayProfileNeighborState;
+}
+
+export interface OverlayUiState {
+  theme: Theme;
+  appVisible: boolean;
+  appTransform: string;
+  appTransformOrigin: string;
+  appTop: string;
+  appBottom: string;
+  appLeft: string;
+  appRight: string;
+  appAlignItems: string;
+  playingActive: boolean;
+  playingFlexDirection: string;
+  playingTop: string;
+  playingBottom: string;
+  playingAlignItems: string;
+  menuActive: boolean;
+  menuTop: string;
+  menuBottom: string;
+  menuTransform: string;
+  menuTransformOrigin: string;
+  headerDisplay: string;
+  headerFlexDirection: string;
+  textBlockDisplay: string;
+  textBlockAlignItems: string;
+  textBlockTextAlign: string;
+  statsRowDisplay: string;
+  statsRowJustifyContent: string;
+  topPanelDisplay: string;
+  topPanelNoBackground: boolean;
+  hpDisplay: string;
+  bottomStatsDisplay: string;
+  bottomStatsAlignItems: string;
+  bottomStatRowDisplay: string;
+  bottomStatRowFlexDirection: string;
+  accDisplay: string;
+  rankWrapperFlexDirection: string;
+  rankInfoAlignItems: string;
+  rankInfoTextAlign: string;
+  coverDisplay: string;
+  coverGlow: boolean;
+  avatarGlow: boolean;
+  profileBackgroundEnabled: boolean;
+  titleDisplay: string;
+  artistDisplay: string;
+  metaDisplay: string;
+  bsrDisplay: string;
+  bsrJustifyContent: string;
+}
+
+export interface OverlaySettingsState {
+  visible: boolean;
+  config: OverlayConfig;
+}
+
+export interface OverlayViewModel {
+  score: OverlayScoreState;
+  progress: OverlayProgressState;
+  ppPredictor: OverlayPpPredictorState;
+  song: OverlaySongState;
+  mapRatings: OverlayMapRatingsState;
+  profile: OverlayProfileState;
+  ui: OverlayUiState;
+  settings: OverlaySettingsState;
+}
+
 export interface MapInfoPayload {
   sub_name?: string;
   name?: string;
@@ -149,110 +292,6 @@ export interface WsPayload {
   scoreEvent?: ScoreEventPayload;
   pauseTime?: number;
   resumeTime?: number;
-}
-
-export interface OverlayElements {
-  app: HTMLElement;
-  menuOverlay: HTMLElement;
-  playingOverlay: HTMLElement;
-  topGlassPanel: HTMLElement;
-  headerRow: HTMLElement;
-  textBlock: HTMLElement;
-  statsRow: HTMLElement;
-  progFill: HTMLElement;
-  time: HTMLElement;
-  title: HTMLElement;
-  artist: HTMLElement;
-  metaLine: HTMLElement;
-  bsrLine: HTMLElement;
-  diff: HTMLElement;
-  bpm: HTMLElement;
-  key: HTMLElement;
-  date: HTMLElement;
-  coverWrapper: HTMLElement;
-  cover: HTMLImageElement;
-  mapRatings: HTMLElement;
-  mapRatingStars: HTMLElement;
-  mapRatingTech: HTMLElement;
-  mapRatingAcc: HTMLElement;
-  mapRatingPass: HTMLElement;
-  bottomStats: HTMLElement;
-  bottomStatRow: HTMLElement;
-  accLarge: HTMLElement;
-  accNum: HTMLElement;
-  accGrade: HTMLElement;
-  missLabel: HTMLElement;
-  combo: HTMLElement;
-  miss: HTMLElement;
-  hpBarWrapper: HTMLElement;
-  hpVal: HTMLElement;
-  hpFill: HTMLElement;
-  debug: HTMLElement;
-  settings: HTMLElement;
-  rankWrapper: HTMLElement;
-  rankInfo: HTMLElement;
-  rankAvatarWrapper: HTMLElement;
-  rankAvatar: HTMLImageElement;
-  rankName: HTMLElement;
-  rankGlobalBlItem: HTMLElement;
-  rankGlobalBl: HTMLElement;
-  rankGlobalSsItem: HTMLElement;
-  rankGlobalSs: HTMLElement;
-  rankLocalBlItem: HTMLElement;
-  rankLocalBl: HTMLElement;
-  rankLocalSsItem: HTMLElement;
-  rankLocalSs: HTMLElement;
-  rankPpBlItem: HTMLElement;
-  rankPpBl: HTMLElement;
-  rankPpSsItem: HTMLElement;
-  rankPpSs: HTMLElement;
-  rankNextGlobalRow: HTMLElement;
-  rankNextGlobal: HTMLElement;
-  rankNextRegionRow: HTMLElement;
-  rankNextRegion: HTMLElement;
-  ssMapStars: HTMLElement;
-  ppPredictor: HTMLElement;
-  ppPredictorBlItem: HTMLElement;
-  ppPredictorBl: HTMLElement;
-  ppPredictorSsItem: HTMLElement;
-  ppPredictorSs: HTMLElement;
-  // blNextFriendsRow: HTMLElement;
-  // blNextFriends: HTMLElement;
-  inputGameDataSource: HTMLSelectElement;
-  inputTheme: HTMLSelectElement;
-  inputScale: HTMLInputElement;
-  inputProfileScale: HTMLInputElement;
-  inputBl: HTMLInputElement;
-  inputSs: HTMLInputElement;
-  inputNameSource: HTMLSelectElement;
-  inputAvatarSource: HTMLSelectElement;
-  blProfileRefreshMinutesRow: HTMLElement;
-  inputBlProfileRefreshStrategy: HTMLSelectElement;
-  inputBlProfileRefreshMinutes: HTMLSelectElement;
-  inputSsProfileRefreshMinutes: HTMLSelectElement;
-  inputCustomProxy: HTMLInputElement;
-  inputShowBl: HTMLInputElement;
-  inputShowSs: HTMLInputElement;
-  inputShowBlNextGlobal: HTMLInputElement;
-  inputShowBlNextRegion: HTMLInputElement;
-  // inputShowBlNextFriends: HTMLInputElement;
-  inputShowDebug: HTMLInputElement;
-  inputShowProfileAlways: HTMLInputElement;
-  inputGlowAvatar: HTMLInputElement;
-  inputShowCover: HTMLInputElement;
-  inputShowTitle: HTMLInputElement;
-  inputShowArtist: HTMLInputElement;
-  inputShowMeta: HTMLInputElement;
-  inputShowBsr: HTMLInputElement;
-  inputShowMapRatings: HTMLInputElement;
-  inputShowSsStars: HTMLInputElement;
-  inputShowPpPredictor: HTMLInputElement;
-  inputShowProgress: HTMLInputElement;
-  inputShowHp: HTMLInputElement;
-  inputShowStats: HTMLInputElement;
-  inputShowAcc: HTMLInputElement;
-  inputMapBg: HTMLInputElement;
-  inputBlBg: HTMLInputElement;
 }
 
 export interface BeatleaderFetchResult {

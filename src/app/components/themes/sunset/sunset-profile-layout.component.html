@@ -1,0 +1,27 @@
+<div
+  id="menu-overlay"
+  class="view-mode glass-panel"
+  [class.active]="ui().menuActive"
+  [class.panel-no-bg]="ui().profileBackgroundEnabled === false"
+  [style.top]="ui().menuTop"
+  [style.bottom]="ui().menuBottom"
+  [style.transform]="ui().menuTransform"
+  [style.transform-origin]="ui().menuTransformOrigin"
+>
+  <div
+    id="rank-wrapper"
+    [style.display]="profile().visible ? 'flex' : 'none'"
+    [style.flex-direction]="ui().rankWrapperFlexDirection"
+  >
+    <app-profile-avatar></app-profile-avatar>
+    <div
+      id="rank-info"
+      [style.align-items]="ui().rankInfoAlignItems"
+      [style.text-align]="ui().rankInfoTextAlign"
+    >
+      <app-profile-name></app-profile-name>
+      <app-profile-ranks></app-profile-ranks>
+      <app-profile-next-ranks></app-profile-next-ranks>
+    </div>
+  </div>
+</div>

@@ -1,307 +1,85 @@
 import { Injectable } from '@angular/core';
-import { DEFAULT_PROXY_CONFIG, PLACEHOLDER_COVER } from '../constants/overlay.constants';
+import { PLACEHOLDER_COVER } from '../constants/overlay.constants';
 import {
   BeatleaderMapRatings,
   BeatleaderPlayerOverlayDetails,
   Lang,
   OverlayConfig,
-  OverlayElements,
+  OverlayProfileNeighborState,
   PlayerCandidate,
   ViewMode
 } from '../models/overlay.models';
 import { OverlayConfigService } from './overlay-config.service';
+import { OverlayStateService } from './overlay-state.service';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayDomService {
-  private static readonly NUMBER_ANIMATION_MS = 280;
-  private els?: OverlayElements;
-  private debugTimeout: number | null = null;
-  private readonly numberAnimations = new WeakMap<HTMLElement, number>();
+  private layoutRafId: number | null = null;
   private blPlayer: PlayerCandidate | null = null;
   private blDetails: BeatleaderPlayerOverlayDetails = this.getEmptyBeatleaderDetails();
   private blStatusText = 'Loading...';
   private ssPlayer: PlayerCandidate | null = null;
   private ssStatusText = 'Loading...';
 
-  constructor(private readonly configService: OverlayConfigService) {}
-
-  initializeElements(): OverlayElements {
-    this.els = {
-      app: this.mustGet('app-container'),
-      menuOverlay: this.mustGet('menu-overlay'),
-      playingOverlay: this.mustGet('playing-overlay'),
-      topGlassPanel: this.mustGet('top-glass-panel'),
-      headerRow: this.mustGet('header-row'),
-      textBlock: this.mustGet('text-block'),
-      statsRow: this.mustGet('stats-row'),
-      progFill: this.mustGet('progress-fill'),
-      time: this.mustGet('time-prog'),
-      title: this.mustGet('title'),
-      artist: this.mustGet('artist-mapper'),
-      metaLine: this.mustGet('meta-line'),
-      bsrLine: this.mustGet('bsr-line'),
-      diff: this.mustGet('difficulty'),
-      bpm: this.mustGet('bpm'),
-      key: this.mustGet('key'),
-      date: this.mustGet('map-date'),
-      coverWrapper: this.mustGet('cover-wrapper'),
-      cover: this.mustGet('cover') as HTMLImageElement,
-      mapRatings: this.mustGet('map-ratings'),
-      mapRatingStars: this.mustGet('map-rating-stars'),
-      mapRatingTech: this.mustGet('map-rating-tech'),
-      mapRatingAcc: this.mustGet('map-rating-acc'),
-      mapRatingPass: this.mustGet('map-rating-pass'),
-      bottomStats: this.mustGet('bottom-stats'),
-      bottomStatRow: this.mustQuery('.bottom-stat-row'),
-      accLarge: this.mustQuery('.acc-large'),
-      accNum: this.mustGet('acc-num'),
-      accGrade: this.mustGet('acc-grade'),
-      missLabel: this.mustGet('miss-label'),
-      combo: this.mustGet('combo-val'),
-      miss: this.mustGet('miss-val'),
-      hpBarWrapper: this.mustGet('hp-bar-wrapper'),
-      hpVal: this.mustGet('hp-val'),
-      hpFill: this.mustGet('hp-bar-fill'),
-      debug: this.mustGet('debug'),
-      settings: this.mustGet('settings-modal'),
-      rankWrapper: this.mustGet('rank-wrapper'),
-      rankInfo: this.mustGet('rank-info'),
-      rankAvatarWrapper: this.mustGet('rank-avatar-wrapper'),
-      rankAvatar: this.mustGet('rank-avatar') as HTMLImageElement,
-      rankName: this.mustGet('rank-name'),
-      rankGlobalBlItem: this.mustGet('rank-global-bl-item'),
-      rankGlobalBl: this.mustGet('rank-global-bl'),
-      rankGlobalSsItem: this.mustGet('rank-global-ss-item'),
-      rankGlobalSs: this.mustGet('rank-global-ss'),
-      rankLocalBlItem: this.mustGet('rank-local-bl-item'),
-      rankLocalBl: this.mustGet('rank-local-bl'),
-      rankLocalSsItem: this.mustGet('rank-local-ss-item'),
-      rankLocalSs: this.mustGet('rank-local-ss'),
-      rankPpBlItem: this.mustGet('rank-pp-bl-item'),
-      rankPpBl: this.mustGet('rank-pp-bl'),
-      rankPpSsItem: this.mustGet('rank-pp-ss-item'),
-      rankPpSs: this.mustGet('rank-pp-ss'),
-      rankNextGlobalRow: this.mustGet('rank-next-global-row'),
-      rankNextGlobal: this.mustGet('rank-next-global'),
-      rankNextRegionRow: this.mustGet('rank-next-region-row'),
-      rankNextRegion: this.mustGet('rank-next-region'),
-      ssMapStars: this.mustGet('ss-map-stars'),
-      ppPredictor: this.mustGet('pp-predictor'),
-      ppPredictorBlItem: this.mustGet('pp-predictor-bl-item'),
-      ppPredictorBl: this.mustGet('pp-predictor-bl'),
-      ppPredictorSsItem: this.mustGet('pp-predictor-ss-item'),
-      ppPredictorSs: this.mustGet('pp-predictor-ss'),
-      // blNextFriendsRow: this.mustGet('bl-next-friends-row'),
-      // blNextFriends: this.mustGet('bl-next-friends'),
-      inputGameDataSource: this.mustGet('inp-game-data-source') as HTMLSelectElement,
-      inputTheme: this.mustGet('inp-theme') as HTMLSelectElement,
-      inputScale: this.mustGet('inp-scale') as HTMLInputElement,
-      inputProfileScale: this.mustGet('inp-profile-scale') as HTMLInputElement,
-      inputBl: this.mustGet('inp-bl') as HTMLInputElement,
-      inputSs: this.mustGet('inp-ss') as HTMLInputElement,
-      inputNameSource: this.mustGet('inp-name-source') as HTMLSelectElement,
-      inputAvatarSource: this.mustGet('inp-avatar-source') as HTMLSelectElement,
-      blProfileRefreshMinutesRow: this.mustGet('bl-profile-refresh-minutes-row'),
-      inputBlProfileRefreshStrategy: this.mustGet('inp-bl-profile-refresh-strategy') as HTMLSelectElement,
-      inputBlProfileRefreshMinutes: this.mustGet('inp-bl-profile-refresh-minutes') as HTMLSelectElement,
-      inputSsProfileRefreshMinutes: this.mustGet('inp-ss-profile-refresh-minutes') as HTMLSelectElement,
-      inputCustomProxy: this.mustGet('inp-custom-proxy') as HTMLInputElement,
-      inputShowBl: this.mustGet('inp-show-bl') as HTMLInputElement,
-      inputShowSs: this.mustGet('inp-show-ss') as HTMLInputElement,
-      inputShowBlNextGlobal: this.mustGet('inp-show-bl-next-global') as HTMLInputElement,
-      inputShowBlNextRegion: this.mustGet('inp-show-bl-next-region') as HTMLInputElement,
-      // inputShowBlNextFriends: this.mustGet('inp-show-bl-next-friends') as HTMLInputElement,
-      inputShowDebug: this.mustGet('inp-show-debug') as HTMLInputElement,
-      inputShowProfileAlways: this.mustGet('inp-show-profile-always') as HTMLInputElement,
-      inputGlowAvatar: this.mustGet('inp-glow-avatar') as HTMLInputElement,
-      inputShowCover: this.mustGet('inp-show-cover') as HTMLInputElement,
-      inputShowTitle: this.mustGet('inp-show-title') as HTMLInputElement,
-      inputShowArtist: this.mustGet('inp-show-artist') as HTMLInputElement,
-      inputShowMeta: this.mustGet('inp-show-meta') as HTMLInputElement,
-      inputShowBsr: this.mustGet('inp-show-bsr') as HTMLInputElement,
-      inputShowMapRatings: this.mustGet('inp-show-map-ratings') as HTMLInputElement,
-      inputShowSsStars: this.mustGet('inp-show-ss-stars') as HTMLInputElement,
-      inputShowPpPredictor: this.mustGet('inp-show-pp-predictor') as HTMLInputElement,
-      inputShowProgress: this.mustGet('inp-show-progress') as HTMLInputElement,
-      inputShowHp: this.mustGet('inp-show-hp') as HTMLInputElement,
-      inputShowStats: this.mustGet('inp-show-stats') as HTMLInputElement,
-      inputShowAcc: this.mustGet('inp-show-acc') as HTMLInputElement,
-      inputMapBg: this.mustGet('inp-map-bg') as HTMLInputElement,
-      inputBlBg: this.mustGet('inp-bl-bg') as HTMLInputElement
-    };
-
-    this.els.inputBlProfileRefreshStrategy.addEventListener('change', () => {
-      this.updateBeatleaderProfileRefreshIntervalVisibility();
-    });
-
-    return this.els;
-  }
-
-  get elements(): OverlayElements {
-    if (!this.els) {
-      throw new Error('Overlay elements are not initialized');
-    }
-
-    return this.els;
-  }
+  constructor(
+    private readonly configService: OverlayConfigService,
+    private readonly state: OverlayStateService
+  ) {}
 
   setupInitialView(): void {
-    this.elements.app.style.display = 'none';
-    this.elements.cover.src = PLACEHOLDER_COVER;
+    this.state.patchUi({ appVisible: false });
+    this.state.resetSong(this.configService.getText(this.configService.getConfig().lang, 'waitingSong'), PLACEHOLDER_COVER);
   }
 
   applyLanguage(config: OverlayConfig): void {
     const translations = this.configService.getTranslations(config.lang);
+    const currentSong = this.state.song();
     const isDefaultTitle =
-      this.elements.title.textContent === this.configService.getText('en', 'waitingSong') ||
-      this.elements.title.textContent === this.configService.getText('ru', 'waitingSong') ||
-      this.elements.title.textContent === 'Waiting for song...';
+      currentSong.title === this.configService.getText('en', 'waitingSong') ||
+      currentSong.title === this.configService.getText('ru', 'waitingSong') ||
+      currentSong.title === 'Waiting for song...';
 
+    const currentProfile = this.state.profile();
     const isDefaultLoading =
-      this.elements.rankName.textContent === this.configService.getText('en', 'loading') ||
-      this.elements.rankName.textContent === this.configService.getText('ru', 'loading') ||
-      this.elements.rankName.textContent === 'Loading...';
+      currentProfile.name === this.configService.getText('en', 'loading') ||
+      currentProfile.name === this.configService.getText('ru', 'loading') ||
+      currentProfile.name === 'Loading...';
 
-    document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((element) => {
-      const key = element.getAttribute('data-i18n');
-
-      if (!key || !translations[key]) {
-        return;
-      }
-
-      if (element.id === 'title' && !isDefaultTitle) {
-        return;
-      }
-
-      if (element.id === 'rank-name' && !isDefaultLoading) {
-        return;
-      }
-
-      element.textContent = translations[key];
-    });
-
-    document.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((element) => {
-      const key = element.getAttribute('data-i18n-title');
-
-      if (!key || !translations[key]) {
-        return;
-      }
-
-      element.title = translations[key];
-    });
-
-    this.elements.inputBl.placeholder = translations['blPlaceholder'];
-    this.elements.inputSs.placeholder = translations['ssPlaceholder'];
-    this.elements.inputCustomProxy.placeholder = translations['customProxyPlaceholder'];
+    if (isDefaultTitle) {
+      this.state.patchSong({ title: translations['waitingSong'] });
+    }
+    if (isDefaultLoading) {
+      this.blStatusText = translations['loading'];
+      this.ssStatusText = translations['loading'];
+    }
     this.refreshRankProfile(config);
     document.documentElement.lang = config.lang;
   }
 
-  populateInputs(config: OverlayConfig): void {
-    this.elements.inputGameDataSource.value = config.gameDataSource;
-    this.elements.inputTheme.value = config.theme;
-    this.elements.inputScale.value = String(config.scale);
-    this.elements.inputProfileScale.value = String(config.profileScale);
-    this.elements.inputBl.value = config.blId;
-    this.elements.inputSs.value = config.ssId;
-    this.elements.inputNameSource.value = config.nameSource;
-    this.elements.inputAvatarSource.value = config.avatarSource;
-    this.elements.inputBlProfileRefreshStrategy.value = config.blProfileRefreshStrategy;
-    this.elements.inputBlProfileRefreshMinutes.value = String(config.blProfileRefreshMinutes);
-    this.elements.inputSsProfileRefreshMinutes.value = String(config.ssProfileRefreshMinutes);
-    this.updateBeatleaderProfileRefreshIntervalVisibility();
-    this.elements.inputCustomProxy.value = config.customProxy;
-    this.elements.inputShowBl.checked = config.showBL !== false;
-    this.elements.inputShowSs.checked = config.showSS === true;
-    this.elements.inputShowBlNextGlobal.checked = config.showBLNextGlobal !== false;
-    this.elements.inputShowBlNextRegion.checked = config.showBLNextRegion !== false;
-    // this.elements.inputShowBlNextFriends.checked = config.showBLNextFriends !== false;
-    this.elements.inputShowDebug.checked = config.showDebugUI !== false;
-    this.elements.inputShowProfileAlways.checked = config.showProfileAlways !== false;
-    this.elements.inputGlowAvatar.checked = config.glowAvatar !== false;
-    this.elements.inputShowCover.checked = config.showCover !== false;
-    this.elements.inputShowTitle.checked = config.showTitle !== false;
-    this.elements.inputShowArtist.checked = config.showArtist !== false;
-    this.elements.inputShowMeta.checked = config.showMeta !== false;
-    this.elements.inputShowBsr.checked = config.showBsr !== false;
-    this.elements.inputShowMapRatings.checked = config.showMapRatings !== false;
-    this.elements.inputShowSsStars.checked = config.showSSStars === true;
-    this.elements.inputShowPpPredictor.checked = config.showPpPredictor === true;
-    this.elements.inputShowProgress.checked = config.showProgress !== false;
-    this.elements.inputShowHp.checked = config.showHp !== false;
-    this.elements.inputShowStats.checked = config.showStats !== false;
-    this.elements.inputShowAcc.checked = config.showAcc !== false;
-    this.elements.inputMapBg.checked = config.showMapBg !== false;
-    this.elements.inputBlBg.checked = config.showBLBg !== false;
-
-    const layoutRadio = document.querySelector<HTMLInputElement>(`input[name="layout"][value="${config.layout}"]`);
-    const langRadio = document.querySelector<HTMLInputElement>(`input[name="lang"][value="${config.lang}"]`);
-    if (layoutRadio) layoutRadio.checked = true;
-    if (langRadio) langRadio.checked = true;
-  }
-
-  private updateBeatleaderProfileRefreshIntervalVisibility(): void {
-    this.elements.blProfileRefreshMinutesRow.style.display =
-      this.elements.inputBlProfileRefreshStrategy.value === 'interval' ? '' : 'none';
-  }
-
-  readFormConfig(currentConfig: OverlayConfig): OverlayConfig {
-    const checkedLayout = document.querySelector<HTMLInputElement>('input[name="layout"]:checked')?.value ?? currentConfig.layout;
-    const checkedLang = document.querySelector<HTMLInputElement>('input[name="lang"]:checked')?.value ?? currentConfig.lang;
-    const checkedTheme = this.elements.inputTheme.value || currentConfig.theme;
-
-    return {
-      ...currentConfig,
-      gameDataSource: this.configService.isGameDataSource(this.elements.inputGameDataSource.value)
-        ? this.elements.inputGameDataSource.value
-        : currentConfig.gameDataSource,
-      customProxy: this.elements.inputCustomProxy.value.trim(),
-      scale: this.configService.clampScale(Number.parseFloat(this.elements.inputScale.value)),
-      profileScale: this.configService.clampScale(Number.parseFloat(this.elements.inputProfileScale.value)),
-      blId: this.elements.inputBl.value.trim(),
-      ssId: this.elements.inputSs.value.trim(),
-      nameSource: this.elements.inputNameSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
-      avatarSource: this.elements.inputAvatarSource.value === 'scoresaber' ? 'scoresaber' : 'beatleader',
-      blProfileRefreshStrategy: this.configService.isBeatleaderProfileRefreshStrategy(this.elements.inputBlProfileRefreshStrategy.value)
-        ? this.elements.inputBlProfileRefreshStrategy.value
-        : currentConfig.blProfileRefreshStrategy,
-      blProfileRefreshMinutes: this.configService.normalizeProfileRefreshMinutes(this.elements.inputBlProfileRefreshMinutes.value),
-      ssProfileRefreshMinutes: this.configService.normalizeProfileRefreshMinutes(this.elements.inputSsProfileRefreshMinutes.value),
-      showBL: this.elements.inputShowBl.checked,
-      showSS: this.elements.inputShowSs.checked,
-      showBLNextGlobal: this.elements.inputShowBlNextGlobal.checked,
-      showBLNextRegion: this.elements.inputShowBlNextRegion.checked,
-      // `bl-next-friends` is temporarily disabled; preserve stored config as-is.
-      showBLNextFriends: currentConfig.showBLNextFriends,
-      showDebugUI: this.elements.inputShowDebug.checked,
-      showProfileAlways: this.elements.inputShowProfileAlways.checked,
-      glowAvatar: this.elements.inputGlowAvatar.checked,
-      showCover: this.elements.inputShowCover.checked,
-      showTitle: this.elements.inputShowTitle.checked,
-      showArtist: this.elements.inputShowArtist.checked,
-      showMeta: this.elements.inputShowMeta.checked,
-      showBsr: this.elements.inputShowBsr.checked,
-      showMapRatings: this.elements.inputShowMapRatings.checked,
-      showSSStars: this.elements.inputShowSsStars.checked,
-      showPpPredictor: this.elements.inputShowPpPredictor.checked,
-      showProgress: this.elements.inputShowProgress.checked,
-      showHp: this.elements.inputShowHp.checked,
-      showStats: this.elements.inputShowStats.checked,
-      showAcc: this.elements.inputShowAcc.checked,
-      showMapBg: this.elements.inputMapBg.checked,
-      showBLBg: this.elements.inputBlBg.checked,
-      theme: this.configService.isTheme(checkedTheme) ? checkedTheme : currentConfig.theme,
-      layout: this.configService.isLayout(checkedLayout) ? checkedLayout : currentConfig.layout,
-      lang: this.configService.isLang(checkedLang) ? checkedLang : currentConfig.lang
-    };
-  }
-
   applyTheme(config: OverlayConfig): void {
-    this.elements.app.dataset['theme'] = config.theme;
+    this.state.patchUi({ theme: config.theme });
     document.documentElement.dataset['theme'] = config.theme;
   }
 
   applyLayout(config: OverlayConfig): void {
+    this.applyLayoutNow(config);
+
+    if (this.layoutRafId !== null) {
+      cancelAnimationFrame(this.layoutRafId);
+      this.layoutRafId = null;
+    }
+
+    if (this.getVerticalAlignment(config.layout) !== 'middle') {
+      return;
+    }
+
+    this.layoutRafId = requestAnimationFrame(() => {
+      this.applyLayoutNow(config);
+      this.layoutRafId = null;
+    });
+  }
+
+  private applyLayoutNow(config: OverlayConfig): void {
     const horizontal = this.getHorizontalAlignment(config.layout);
     const vertical = this.getVerticalAlignment(config.layout);
     const translateX = horizontal === 'center' ? '-50%' : '0';
@@ -309,135 +87,90 @@ export class OverlayDomService {
     const transformParts = [`translate(${translateX}, ${translateY})`, `scale(${config.scale})`];
     const middleTop = this.getMiddleAnchorTop(config);
 
-    this.elements.app.style.transformOrigin = `${horizontal} ${vertical === 'middle' ? 'center' : vertical}`;
-    this.elements.app.style.transform = transformParts.join(' ');
-    this.elements.app.style.top = vertical === 'top' ? '20px' : vertical === 'middle' ? middleTop : 'auto';
-    this.elements.app.style.bottom = vertical === 'bottom' ? '20px' : 'auto';
-    this.elements.app.style.left = horizontal === 'left' ? '20px' : horizontal === 'center' ? '50%' : 'auto';
-    this.elements.app.style.right = horizontal === 'right' ? '20px' : 'auto';
-    this.elements.playingOverlay.style.flexDirection = vertical === 'bottom' ? 'column-reverse' : 'column';
-    this.elements.menuOverlay.style.top = vertical === 'bottom' ? 'auto' : '0';
-    this.elements.menuOverlay.style.bottom = vertical === 'bottom' ? '0' : 'auto';
-    this.elements.playingOverlay.style.top = vertical === 'bottom' ? 'auto' : '0';
-    this.elements.playingOverlay.style.bottom = vertical === 'bottom' ? '0' : 'auto';
-    this.elements.app.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.playingOverlay.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.headerRow.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
-    this.elements.textBlock.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.textBlock.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
-    this.elements.statsRow.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.bottomStats.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.bottomStatRow.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
-    this.elements.rankWrapper.style.flexDirection = horizontal === 'right' ? 'row-reverse' : 'row';
-    this.elements.rankInfo.style.alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.rankInfo.style.textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
-    this.elements.bsrLine.style.justifyContent = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
-    this.elements.hpFill.style.marginLeft = '0';
-    this.elements.progFill.style.marginLeft = '0';
-    this.applyProfileScale(config, horizontal, vertical);
-  }
-
-  restoreDefaultProxyConfig(): void {
-    this.elements.inputCustomProxy.value = DEFAULT_PROXY_CONFIG;
-  }
-
-  private applyProfileScale(
-    config: OverlayConfig,
-    horizontal: 'left' | 'center' | 'right',
-    vertical: 'top' | 'middle' | 'bottom'
-  ): void {
+    const alignItems = horizontal === 'right' ? 'flex-end' : horizontal === 'center' ? 'center' : 'flex-start';
+    const textAlign = horizontal === 'right' ? 'right' : horizontal === 'center' ? 'center' : 'left';
     const originY = vertical === 'middle' ? 'center' : vertical;
 
-    this.elements.rankWrapper.style.transform = '';
-    this.elements.rankWrapper.style.transformOrigin = '';
-    this.elements.menuOverlay.style.transform = `scale(${config.profileScale})`;
-    this.elements.menuOverlay.style.transformOrigin = `${horizontal} ${originY}`;
+    this.state.patchUi({
+      appTransformOrigin: `${horizontal} ${vertical === 'middle' ? 'center' : vertical}`,
+      appTransform: transformParts.join(' '),
+      appTop: vertical === 'top' ? '20px' : vertical === 'middle' ? middleTop : 'auto',
+      appBottom: vertical === 'bottom' ? '20px' : 'auto',
+      appLeft: horizontal === 'left' ? '20px' : horizontal === 'center' ? '50%' : 'auto',
+      appRight: horizontal === 'right' ? '20px' : 'auto',
+      appAlignItems: alignItems,
+      playingFlexDirection: vertical === 'bottom' ? 'column-reverse' : 'column',
+      playingTop: vertical === 'bottom' ? 'auto' : '0',
+      playingBottom: vertical === 'bottom' ? '0' : 'auto',
+      playingAlignItems: alignItems,
+      menuTop: vertical === 'bottom' ? 'auto' : '0',
+      menuBottom: vertical === 'bottom' ? '0' : 'auto',
+      menuTransform: `scale(${config.profileScale})`,
+      menuTransformOrigin: `${horizontal} ${originY}`,
+      headerFlexDirection: horizontal === 'right' ? 'row-reverse' : 'row',
+      textBlockAlignItems: alignItems,
+      textBlockTextAlign: textAlign,
+      statsRowJustifyContent: alignItems,
+      bottomStatsAlignItems: alignItems,
+      bottomStatRowFlexDirection: horizontal === 'right' ? 'row-reverse' : 'row',
+      rankWrapperFlexDirection: horizontal === 'right' ? 'row-reverse' : 'row',
+      rankInfoAlignItems: alignItems,
+      rankInfoTextAlign: textAlign,
+      bsrJustifyContent: alignItems
+    });
   }
 
   applyModules(config: OverlayConfig): void {
-    const showBlRatings = config.showMapRatings && this.elements.mapRatings.dataset['blState'] === 'ready';
-    const showSsStars = config.showSSStars && this.elements.mapRatings.dataset['ssState'] === 'ready';
-    const showMapRatings = showBlRatings || showSsStars;
-    const showPpPredictor = config.showPpPredictor && this.elements.ppPredictor.dataset['state'] === 'ready';
-    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
-    this.elements.coverWrapper.style.display = config.showCover ? 'flex' : 'none';
-    this.elements.mapRatings.style.display = showMapRatings ? 'flex' : 'none';
-    if (blBreakdownRow) {
-      blBreakdownRow.style.display = showBlRatings ? 'flex' : 'none';
-    }
-    this.elements.mapRatingStars.parentElement!.style.display = showBlRatings ? 'inline-flex' : 'none';
-    this.elements.ssMapStars.parentElement!.style.display = showSsStars ? 'inline-flex' : 'none';
-    if (totalRow) {
-      totalRow.style.display = showMapRatings ? 'flex' : 'none';
-    }
-    this.elements.title.style.display = config.showTitle ? '' : 'none';
-    this.elements.artist.style.display = config.showArtist ? '' : 'none';
-    this.elements.metaLine.style.display = config.showMeta ? '' : 'none';
-    this.elements.bsrLine.style.display = config.showBsr ? '' : 'none';
-    this.updatePpPredictorVisibility(config);
+    this.state.setPpPredictorEnabled(config.showPpPredictor);
+    this.state.applyMapRatingSettings({ showMapRatings: config.showMapRatings, showSSStars: config.showSSStars });
+    this.state.patchUi({
+      coverDisplay: config.showCover ? 'flex' : 'none',
+      titleDisplay: config.showTitle ? '' : 'none',
+      artistDisplay: config.showArtist ? '' : 'none',
+      metaDisplay: config.showMeta ? '' : 'none',
+      bsrDisplay: config.showBsr ? '' : 'none',
+      statsRowDisplay: config.showProgress ? 'flex' : 'none',
+      hpDisplay: config.showHp ? 'flex' : 'none',
+      bottomStatRowDisplay: config.showStats ? 'flex' : 'none',
+      accDisplay: config.showAcc ? 'flex' : 'none',
+      bottomStatsDisplay: config.showStats || config.showAcc ? 'flex' : 'none'
+    });
 
-    const showAnyText = config.showTitle || config.showArtist || config.showMeta || config.showBsr || showMapRatings || showPpPredictor;
-    this.elements.textBlock.style.display = showAnyText ? 'flex' : 'none';
-
-    const showHeader = config.showCover || showAnyText;
-    this.elements.headerRow.style.display = showHeader ? 'flex' : 'none';
-    this.elements.statsRow.style.display = config.showProgress ? 'flex' : 'none';
-
-    const showTopPanel = showHeader || config.showProgress;
-    this.elements.topGlassPanel.style.display = showTopPanel ? 'flex' : 'none';
-    this.elements.hpBarWrapper.style.display = config.showHp ? 'flex' : 'none';
-    this.elements.bottomStatRow.style.display = config.showStats ? 'flex' : 'none';
-    this.elements.accLarge.style.display = config.showAcc ? 'flex' : 'none';
-
-    const showBottomStats = config.showStats || config.showAcc;
-    this.elements.bottomStats.style.display = showBottomStats ? 'flex' : 'none';
+    this.updateTextBlockVisibility(config);
     this.refreshRankProfile(config);
   }
 
   applyGlow(config: OverlayConfig): void {
-    this.elements.rankAvatarWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
-    this.elements.coverWrapper.classList.toggle('active-glow', config.glowAvatar !== false);
+    this.state.patchUi({
+      avatarGlow: config.glowAvatar !== false,
+      coverGlow: config.glowAvatar !== false
+    });
   }
 
   applyPanelBackgrounds(config: OverlayConfig): void {
-    this.elements.topGlassPanel.classList.toggle('panel-no-bg', config.showMapBg === false);
-    this.elements.menuOverlay.classList.toggle('panel-no-bg', config.showBLBg === false);
-  }
-
-  toggleSettingsModal(): void {
-    this.elements.settings.classList.toggle('show');
-  }
-
-  hideSettingsModal(): void {
-    this.elements.settings.classList.remove('show');
+    this.state.patchUi({
+      profileBackgroundEnabled: config.showBLBg !== false,
+      topPanelNoBackground: config.showMapBg === false
+    });
   }
 
   setAppVisible(visible: boolean): void {
-    this.elements.app.style.display = visible ? 'flex' : 'none';
+    this.state.patchUi({ appVisible: visible });
+  }
+
+  cancelPendingLayout(): void {
+    if (this.layoutRafId === null) {
+      return;
+    }
+
+    cancelAnimationFrame(this.layoutRafId);
+    this.layoutRafId = null;
   }
 
   resetGameOverlay(lang: Lang): void {
-    this.elements.title.textContent = this.configService.getText(lang, 'waitingSong');
-    this.elements.artist.textContent = '-';
-    this.elements.diff.textContent = '-';
-    this.elements.diff.style.removeProperty('--diff-color');
-    this.elements.diff.style.removeProperty('--diff-shadow');
-    this.elements.bpm.textContent = 'BPM -';
-    this.elements.key.textContent = 'BSR: -';
-    this.elements.date.textContent = '';
-    this.elements.cover.src = PLACEHOLDER_COVER;
-    this.elements.progFill.style.width = '0%';
-    this.elements.hpFill.style.width = '100%';
-    this.setStaticText(this.elements.hpVal, '100%');
-    this.setStaticText(this.elements.accNum, '0.0%');
-    this.elements.accGrade.textContent = 'E';
-    this.elements.accGrade.style.color = '#e0e0e0';
-    this.elements.accGrade.style.textShadow = '0 0 10px #e0e0e0, 1px 1px 3px #000';
-    this.setStaticText(this.elements.combo, '0');
-    this.elements.missLabel.style.display = '';
-    this.setStaticText(this.elements.miss, '0');
-    this.setDefaultTime();
+    this.state.resetScore();
+    this.state.resetProgress();
+    this.state.resetSong(this.configService.getText(lang, 'waitingSong'), PLACEHOLDER_COVER);
     this.resetMapRatings();
     this.resetSSStars();
     this.resetPpPredictor();
@@ -445,13 +178,11 @@ export class OverlayDomService {
 
   setViewMode(mode: ViewMode, showBL: boolean): void {
     if (mode === 'playing') {
-      this.elements.menuOverlay.classList.remove('active');
-      this.elements.playingOverlay.classList.add('active');
+      this.state.patchUi({ menuActive: false, playingActive: true });
       return;
     }
 
-    this.elements.playingOverlay.classList.remove('active');
-    this.elements.menuOverlay.classList.toggle('active', showBL);
+    this.state.patchUi({ playingActive: false, menuActive: showBL });
   }
 
   resetBLDisplay(lang: Lang, messageKey: string = 'loading'): void {
@@ -480,33 +211,11 @@ export class OverlayDomService {
     this.refreshRankProfile(this.configService.getConfig());
   }
 
-  showDebug(message: string, enabled: boolean): void {
-    console.log('[BS+ Overlay]', message);
-    if (!enabled) return;
-
-    if (this.debugTimeout !== null) {
-      window.clearTimeout(this.debugTimeout);
-    }
-
-    this.elements.debug.textContent = message;
-    this.elements.debug.style.opacity = '1';
-    this.debugTimeout = window.setTimeout(() => {
-      this.elements.debug.style.opacity = '0';
-    }, 5000);
-  }
-
   renderProgress(timeSec: number, duration: number): void {
     if (!(duration > 0)) return;
 
     const safeTime = Math.max(0, Math.min(timeSec, duration));
-    const pct = Math.min((safeTime / duration) * 100, 100);
-    this.elements.progFill.style.width = `${pct}%`;
-
-    const curM = Math.floor(safeTime / 60);
-    const curS = Math.floor(safeTime % 60).toString().padStart(2, '0');
-    const totM = Math.floor(duration / 60);
-    const totS = Math.floor(duration % 60).toString().padStart(2, '0');
-    this.elements.time.textContent = `${curM}:${curS} / ${totM}:${totS}`;
+    this.state.setProgress(safeTime, duration);
   }
 
   updateSongBasics(params: {
@@ -518,59 +227,37 @@ export class OverlayDomService {
     bpm: number;
     coverSrc: string;
   }): void {
-    this.elements.title.textContent = params.title;
-    this.elements.artist.textContent = params.artist;
-    this.elements.diff.style.setProperty('--diff-color', params.diffColor);
-    this.elements.diff.style.setProperty('--diff-shadow', params.diffShadow);
-    this.elements.diff.innerHTML = params.difficultyHtml;
-    this.elements.bpm.textContent = `BPM ${Math.round(params.bpm || 0)}`;
-    this.elements.cover.src = params.coverSrc;
+    this.state.patchSong({
+      title: params.title,
+      artist: params.artist,
+      difficultyHtml: params.difficultyHtml,
+      diffColor: params.diffColor,
+      diffShadow: params.diffShadow,
+      bpm: params.bpm,
+      coverSrc: params.coverSrc
+    });
   }
 
   updateBsrLine(keyText: string, dateText: string): void {
-    this.elements.key.textContent = keyText;
-    this.elements.date.textContent = dateText;
+    this.state.patchSong({
+      bsrText: keyText,
+      mapDateText: dateText
+    });
   }
 
   resetMapRatings(): void {
-    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
-    this.elements.mapRatings.dataset['blState'] = 'empty';
-    this.elements.mapRatingStars.textContent = '--';
-    this.elements.mapRatingTech.textContent = '--';
-    this.elements.mapRatingAcc.textContent = '--';
-    this.elements.mapRatingPass.textContent = '--';
-    if (blBreakdownRow) {
-      blBreakdownRow.style.display = 'none';
-    }
-    this.elements.mapRatingStars.parentElement!.style.display = 'none';
-    if (totalRow && this.elements.mapRatings.dataset['ssState'] !== 'ready') {
-      totalRow.style.display = 'none';
-    }
-    this.updateMapRatingsVisibility(this.configService.getConfig());
+    const config = this.configService.getConfig();
+    this.state.resetBeatleaderMapRatings({ showMapRatings: config.showMapRatings, showSSStars: config.showSSStars });
+    this.updateTextBlockVisibility(config);
   }
 
   setMapRatingsUnavailable(): void {
-    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
-    this.elements.mapRatings.dataset['blState'] = 'missing';
-    this.elements.mapRatingStars.textContent = '--';
-    this.elements.mapRatingTech.textContent = '--';
-    this.elements.mapRatingAcc.textContent = '--';
-    this.elements.mapRatingPass.textContent = '--';
-    if (blBreakdownRow) {
-      blBreakdownRow.style.display = 'none';
-    }
-    this.elements.mapRatingStars.parentElement!.style.display = 'none';
-    if (totalRow && this.elements.mapRatings.dataset['ssState'] !== 'ready') {
-      totalRow.style.display = 'none';
-    }
-    this.updateMapRatingsVisibility(this.configService.getConfig());
+    const config = this.configService.getConfig();
+    this.state.setBeatleaderMapRatingsUnavailable({ showMapRatings: config.showMapRatings, showSSStars: config.showSSStars });
+    this.updateTextBlockVisibility(config);
   }
 
   renderMapRatings(ratings: BeatleaderMapRatings, config: OverlayConfig): void {
-    const blBreakdownRow = this.elements.mapRatingTech.parentElement?.parentElement as HTMLElement | null;
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
     const hasAnyRating =
       typeof ratings.stars === 'number' ||
       typeof ratings.tech === 'number' ||
@@ -589,196 +276,120 @@ export class OverlayDomService {
       return;
     }
 
-    this.elements.mapRatings.dataset['blState'] = 'ready';
-    this.elements.mapRatingStars.textContent = this.formatMapRating(ratings.stars);
-    this.elements.mapRatingTech.textContent = this.formatMapRating(ratings.tech);
-    this.elements.mapRatingAcc.textContent = this.formatMapRating(ratings.acc);
-    this.elements.mapRatingPass.textContent = this.formatMapRating(ratings.pass);
-    if (blBreakdownRow) {
-      blBreakdownRow.style.display = config.showMapRatings && hasCompleteBreakdown ? 'flex' : 'none';
-    }
-    this.elements.mapRatingStars.parentElement!.style.display = config.showMapRatings ? 'inline-flex' : 'none';
-    if (totalRow) {
-      totalRow.style.display = 'flex';
-    }
-    this.updateMapRatingsVisibility(config);
+    this.state.setBeatleaderMapRatings(
+      {
+        ...ratings,
+        tech: hasCompleteBreakdown ? ratings.tech : null,
+        acc: hasCompleteBreakdown ? ratings.acc : null,
+        pass: hasCompleteBreakdown ? ratings.pass : null
+      },
+      { showMapRatings: config.showMapRatings, showSSStars: config.showSSStars }
+    );
+    this.updateTextBlockVisibility(config);
   }
 
   resetSSStars(): void {
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
-    this.elements.mapRatings.dataset['ssState'] = 'empty';
-    this.elements.ssMapStars.textContent = '--';
-    this.elements.ssMapStars.parentElement!.style.display = 'none';
-    if (totalRow && this.elements.mapRatings.dataset['blState'] !== 'ready') {
-      totalRow.style.display = 'none';
-    }
-    this.updateMapRatingsVisibility(this.configService.getConfig());
+    const config = this.configService.getConfig();
+    this.state.resetScoreSaberStars({ showMapRatings: config.showMapRatings, showSSStars: config.showSSStars });
+    this.updateTextBlockVisibility(config);
   }
 
   setSSStarsUnavailable(): void {
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
-    this.elements.mapRatings.dataset['ssState'] = 'missing';
-    this.elements.ssMapStars.textContent = '--';
-    this.elements.ssMapStars.parentElement!.style.display = 'none';
-    if (totalRow && this.elements.mapRatings.dataset['blState'] !== 'ready') {
-      totalRow.style.display = 'none';
-    }
-    this.updateMapRatingsVisibility(this.configService.getConfig());
+    const config = this.configService.getConfig();
+    this.state.setScoreSaberStarsUnavailable({ showMapRatings: config.showMapRatings, showSSStars: config.showSSStars });
+    this.updateTextBlockVisibility(config);
   }
 
   renderSSStars(stars: number, config: OverlayConfig): void {
-    const totalRow = this.elements.mapRatingStars.parentElement?.parentElement as HTMLElement | null;
     if (!(stars > 0)) {
       this.setSSStarsUnavailable();
       return;
     }
 
-    this.elements.mapRatings.dataset['ssState'] = 'ready';
-    this.elements.ssMapStars.textContent = this.formatMapRating(stars);
-    this.elements.ssMapStars.parentElement!.style.display = config.showSSStars ? 'inline-flex' : 'none';
-    if (totalRow) {
-      totalRow.style.display = 'flex';
-    }
-    this.updateMapRatingsVisibility(config);
+    this.state.setScoreSaberStars(stars, { showMapRatings: config.showMapRatings, showSSStars: config.showSSStars });
+    this.updateTextBlockVisibility(config);
   }
 
   resetPpPredictor(): void {
-    this.elements.ppPredictor.dataset['state'] = 'empty';
-    this.setStaticText(this.elements.ppPredictorBl, '-- pp');
-    this.setStaticText(this.elements.ppPredictorSs, '-- pp');
-    this.elements.ppPredictorBlItem.style.display = 'none';
-    this.elements.ppPredictorSsItem.style.display = 'none';
-    this.updatePpPredictorVisibility(this.configService.getConfig());
+    this.state.resetPpPredictor();
+    this.updateTextBlockVisibility(this.configService.getConfig());
   }
 
   renderPpPredictor(values: { beatleader: number | null; scoresaber: number | null }, config: OverlayConfig): void {
-    const beatLeaderValue = typeof values.beatleader === 'number' && Number.isFinite(values.beatleader) ? values.beatleader : null;
-    const scoreSaberValue = typeof values.scoresaber === 'number' && Number.isFinite(values.scoresaber) ? values.scoresaber : null;
-    const hasBeatLeader = beatLeaderValue !== null;
-    const hasScoreSaber = scoreSaberValue !== null;
-
-    if (!hasBeatLeader && !hasScoreSaber) {
-      this.resetPpPredictor();
-      return;
-    }
-
-    this.elements.ppPredictor.dataset['state'] = 'ready';
-    if (beatLeaderValue !== null) {
-      this.animateNumber(this.elements.ppPredictorBl, beatLeaderValue, this.formatPredictedPpValue.bind(this));
-    } else {
-      this.setStaticText(this.elements.ppPredictorBl, '-- pp');
-    }
-
-    if (scoreSaberValue !== null) {
-      this.animateNumber(this.elements.ppPredictorSs, scoreSaberValue, this.formatPredictedPpValue.bind(this));
-    } else {
-      this.setStaticText(this.elements.ppPredictorSs, '-- pp');
-    }
-
-    this.elements.ppPredictorBlItem.style.display = hasBeatLeader ? 'inline-flex' : 'none';
-    this.elements.ppPredictorSsItem.style.display = hasScoreSaber ? 'inline-flex' : 'none';
-    this.updatePpPredictorVisibility(config);
+    this.state.setPpPredictor(values, config.showPpPredictor);
+    this.updateTextBlockVisibility(config);
   }
 
   updateAccuracy(accuracy: number, grade: string, color: string): void {
-    this.animateNumber(this.elements.accNum, accuracy, (value) => `${(value * 100).toFixed(1)}%`);
-    this.elements.accGrade.textContent = grade;
-    this.elements.accGrade.style.color = color;
-    this.elements.accGrade.style.textShadow = `0 0 10px ${color}, 1px 1px 3px #000`;
+    this.state.patchScore({ accuracy, grade, gradeColor: color });
   }
 
   updateCombo(combo: number): void {
-    this.animateNumber(this.elements.combo, combo, (value) => String(Math.round(value)));
+    this.state.patchScore({ combo });
   }
 
   updateMiss(missCount: number): void {
-    if (missCount === 0) {
-      this.elements.missLabel.style.display = 'none';
-      this.cancelNumberAnimation(this.elements.miss);
-      this.elements.miss.removeAttribute('data-animated-value');
-      this.elements.miss.innerHTML =
-        '<span class="miss-fc-text">FC</span><span class="miss-fc-check" aria-hidden="true">✓</span>';
-      return;
-    }
-
-    this.elements.missLabel.style.display = '';
-    this.animateNumber(this.elements.miss, missCount, (value) => String(Math.round(value)));
+    this.state.patchScore({ hasMissCount: true, missCount });
   }
 
   updateHealth(currentHealth: number): void {
-    const hpPct = Math.round(currentHealth * 100);
-    this.animateNumber(this.elements.hpVal, hpPct, (value) => `${Math.round(value)}%`);
-    this.elements.hpFill.style.width = `${hpPct}%`;
+    this.state.patchScore({ currentHealth });
   }
 
   setDefaultTime(): void {
-    this.elements.time.textContent = '0:00 / 0:00';
+    this.state.resetProgress();
+  }
+
+  private updateTextBlockVisibility(config: OverlayConfig): boolean {
+    const showAnyText =
+      config.showTitle ||
+      config.showArtist ||
+      config.showMeta ||
+      config.showBsr ||
+      this.state.mapRatings().visible ||
+      this.state.ppPredictor().visible;
+    const showHeader = config.showCover || showAnyText;
+    const showTopPanel = showHeader || config.showProgress;
+
+    this.state.patchUi({
+      textBlockDisplay: showAnyText ? 'flex' : 'none',
+      headerDisplay: showHeader ? 'flex' : 'none',
+      topPanelDisplay: showTopPanel ? 'flex' : 'none'
+    });
+    return showAnyText;
   }
 
   private refreshRankProfile(config: OverlayConfig): void {
     const hasBL = config.showBL;
     const hasSS = config.showSS;
     const hasAnyService = hasBL || hasSS;
-    this.elements.rankWrapper.style.display = hasAnyService ? 'flex' : 'none';
-
-    this.setMetricItem(
-      this.elements.rankGlobalBlItem,
-      this.elements.rankGlobalBl,
-      hasBL,
-      this.formatRankValue(this.blPlayer?.rank, '#--')
-    );
-    this.setMetricItem(
-      this.elements.rankGlobalSsItem,
-      this.elements.rankGlobalSs,
-      hasSS,
-      this.formatRankValue(this.ssPlayer?.rank, '#--')
-    );
-    this.setMetricItem(
-      this.elements.rankLocalBlItem,
-      this.elements.rankLocalBl,
-      hasBL,
-      this.formatLocalValue(this.blPlayer)
-    );
-    this.setMetricItem(
-      this.elements.rankLocalSsItem,
-      this.elements.rankLocalSs,
-      hasSS,
-      this.formatLocalValue(this.ssPlayer)
-    );
-    this.setMetricNumberItem(
-      this.elements.rankPpBlItem,
-      this.elements.rankPpBl,
-      hasBL,
-      this.blPlayer?.pp,
-      this.formatPpValue.bind(this),
-      '-- pp'
-    );
-    this.setMetricNumberItem(
-      this.elements.rankPpSsItem,
-      this.elements.rankPpSs,
-      hasSS,
-      this.ssPlayer?.pp,
-      this.formatPpValue.bind(this),
-      '-- pp'
-    );
-
-    this.renderBeatLeaderNeighbor(this.elements.rankNextGlobal, this.blDetails.global);
-    this.renderBeatLeaderNeighbor(this.elements.rankNextRegion, this.blDetails.region);
-    this.elements.rankNextGlobalRow.style.display = hasBL && config.showBLNextGlobal ? 'flex' : 'none';
-    this.elements.rankNextRegionRow.style.display = hasBL && config.showBLNextRegion ? 'flex' : 'none';
 
     const selectedName = this.pickPreferredSource(config.nameSource, hasBL, hasSS);
     const selectedAvatar = this.pickPreferredSource(config.avatarSource, hasBL, hasSS);
-    this.elements.rankName.textContent = this.getStatusText(selectedName);
-
     const avatarSrc = this.getAvatarSource(selectedAvatar);
-    if (avatarSrc) {
-      this.elements.rankAvatar.src = avatarSrc;
-      this.elements.rankAvatarWrapper.style.display = 'block';
-    } else {
-      this.elements.rankAvatar.src = '';
-      this.elements.rankAvatarWrapper.style.display = 'none';
-    }
+
+    this.state.setProfile({
+      visible: hasAnyService,
+      name: this.getStatusText(selectedName),
+      avatarSrc,
+      avatarVisible: !!avatarSrc,
+      beatleader: {
+        visible: hasBL,
+        globalRankText: this.formatRankValue(this.blPlayer?.rank, '#--'),
+        localRankText: this.formatLocalValue(this.blPlayer),
+        pp: this.toFiniteNumberOrNull(this.blPlayer?.pp)
+      },
+      scoresaber: {
+        visible: hasSS,
+        globalRankText: this.formatRankValue(this.ssPlayer?.rank, '#--'),
+        localRankText: this.formatLocalValue(this.ssPlayer),
+        pp: this.toFiniteNumberOrNull(this.ssPlayer?.pp)
+      },
+      showNextGlobal: hasBL && config.showBLNextGlobal,
+      showNextRegion: hasBL && config.showBLNextRegion,
+      nextGlobal: this.toBeatLeaderNeighborState(this.blDetails.global),
+      nextRegion: this.toBeatLeaderNeighborState(this.blDetails.region)
+    });
   }
 
   private pickPreferredSource(
@@ -829,85 +440,6 @@ export class OverlayDomService {
     return '';
   }
 
-  private setMetricItem(item: HTMLElement, value: HTMLElement, visible: boolean, text: string): void {
-    item.style.display = visible ? 'inline-flex' : 'none';
-    value.textContent = text;
-  }
-
-  private setMetricNumberItem(
-    item: HTMLElement,
-    valueElement: HTMLElement,
-    visible: boolean,
-    value: number | undefined,
-    formatter: (value: number) => string,
-    fallback: string
-  ): void {
-    item.style.display = visible ? 'inline-flex' : 'none';
-
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      this.animateNumber(valueElement, value, formatter);
-      return;
-    }
-
-    this.setStaticText(valueElement, fallback);
-  }
-
-  private animateNumber(element: HTMLElement, target: number, formatter: (value: number) => string): void {
-    const safeTarget = Number(target);
-
-    if (!Number.isFinite(safeTarget)) {
-      return;
-    }
-
-    const current = Number(element.dataset['animatedValue']);
-    const start = Number.isFinite(current) ? current : safeTarget;
-
-    this.cancelNumberAnimation(element);
-
-    if (Math.abs(start - safeTarget) < 0.0001) {
-      element.dataset['animatedValue'] = String(safeTarget);
-      element.textContent = formatter(safeTarget);
-      return;
-    }
-
-    const startedAt = performance.now();
-    const duration = OverlayDomService.NUMBER_ANIMATION_MS;
-
-    const tick = (now: number) => {
-      const progress = Math.min((now - startedAt) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const value = start + (safeTarget - start) * eased;
-
-      element.dataset['animatedValue'] = String(value);
-      element.textContent = formatter(value);
-
-      if (progress < 1) {
-        this.numberAnimations.set(element, requestAnimationFrame(tick));
-        return;
-      }
-
-      element.dataset['animatedValue'] = String(safeTarget);
-      this.numberAnimations.delete(element);
-    };
-
-    this.numberAnimations.set(element, requestAnimationFrame(tick));
-  }
-
-  private setStaticText(element: HTMLElement, text: string): void {
-    this.cancelNumberAnimation(element);
-    element.removeAttribute('data-animated-value');
-    element.textContent = text;
-  }
-
-  private cancelNumberAnimation(element: HTMLElement): void {
-    const animationId = this.numberAnimations.get(element);
-
-    if (animationId !== undefined) {
-      cancelAnimationFrame(animationId);
-      this.numberAnimations.delete(element);
-    }
-  }
-
   private formatRankValue(value: number | undefined, fallback: string): string {
     return typeof value === 'number' ? `#${value.toLocaleString()}` : fallback;
   }
@@ -916,65 +448,30 @@ export class OverlayDomService {
     return player?.countryRank ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})` : '#-- (N/A)';
   }
 
-  private formatPpValue(value: number): string {
-    return typeof value === 'number' ? `${Math.round(value).toLocaleString()} pp` : '-- pp';
+  private toFiniteNumberOrNull(value: number | null | undefined): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 
-  private formatPredictedPpValue(value: number): string {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-      return '-- pp';
-    }
-
-    return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pp`;
-  }
-
-  private mustGet(id: string): HTMLElement {
-    const element = document.getElementById(id);
-    if (!element) throw new Error(`Required element #${id} was not found`);
-    return element;
-  }
-
-  private mustQuery(selector: string): HTMLElement {
-    const element = document.querySelector<HTMLElement>(selector);
-    if (!element) throw new Error(`Required element ${selector} was not found`);
-    return element;
-  }
-
-  private renderBeatLeaderNeighbor(element: HTMLElement, info: BeatleaderPlayerOverlayDetails['global']): void {
-    const title = this.formatBeatLeaderNeighbor(info);
-    element.replaceChildren();
-    element.title = title;
+  private toBeatLeaderNeighborState(info: BeatleaderPlayerOverlayDetails['global']): OverlayProfileNeighborState {
+    const text = this.formatBeatLeaderNeighbor(info);
 
     if (info.status !== 'ready' || !info.value.name) {
-      element.textContent = title;
-      return;
+      return {
+        text,
+        name: '',
+        ppText: '',
+        hasPp: false,
+        isReady: false
+      };
     }
 
-    if (typeof info.value.ppDelta !== 'number') {
-      const name = document.createElement('span');
-      name.className = 'bl-next-player-name';
-      name.textContent = info.value.name;
-      element.appendChild(name);
-      return;
-    }
-
-    const ppText = info.value.ppDelta.toLocaleString(undefined, {
-      minimumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2,
-      maximumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2
-    });
-    const separator = document.createElement('span');
-    separator.className = 'bl-next-separator';
-    separator.textContent = ' • ';
-
-    const pp = document.createElement('span');
-    pp.className = 'bl-next-pp';
-    pp.textContent = `+${ppText} pp`;
-
-    const name = document.createElement('span');
-    name.className = 'bl-next-player-name';
-    name.textContent = info.value.name;
-
-    element.append(pp, separator, name);
+    return {
+      text,
+      name: info.value.name,
+      ppText: typeof info.value.ppDelta === 'number' ? this.formatBeatLeaderNeighborPp(info.value.ppDelta) : '',
+      hasPp: typeof info.value.ppDelta === 'number',
+      isReady: true
+    };
   }
 
   private formatBeatLeaderNeighbor(info: BeatleaderPlayerOverlayDetails['global']): string {
@@ -990,12 +487,16 @@ export class OverlayDomService {
       return info.value.name;
     }
 
-    const ppText = info.value.ppDelta.toLocaleString(undefined, {
-      minimumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2,
-      maximumFractionDigits: info.value.ppDelta >= 100 ? 0 : 2
+    return `${this.formatBeatLeaderNeighborPp(info.value.ppDelta)} • ${info.value.name}`;
+  }
+
+  private formatBeatLeaderNeighborPp(ppDelta: number): string {
+    const ppText = ppDelta.toLocaleString(undefined, {
+      minimumFractionDigits: ppDelta >= 100 ? 0 : 2,
+      maximumFractionDigits: ppDelta >= 100 ? 0 : 2
     });
 
-    return `+${ppText} pp • ${info.value.name}`;
+    return `+${ppText} pp`;
   }
 
   private mergeBeatleaderDetails(
@@ -1015,25 +516,6 @@ export class OverlayDomService {
       region: { status: 'empty' },
       friends: { status: 'empty' }
     };
-  }
-
-  private formatMapRating(value: number | null): string {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-      return '--';
-    }
-
-    return `${value.toFixed(2)}★`;
-  }
-
-  private updateMapRatingsVisibility(config: OverlayConfig): void {
-    const showBlRatings = config.showMapRatings && this.elements.mapRatings.dataset['blState'] === 'ready';
-    const showSsStars = config.showSSStars && this.elements.mapRatings.dataset['ssState'] === 'ready';
-    this.elements.mapRatings.style.display = showBlRatings || showSsStars ? 'flex' : 'none';
-  }
-
-  private updatePpPredictorVisibility(config: OverlayConfig): void {
-    const showPpPredictor = config.showPpPredictor && this.elements.ppPredictor.dataset['state'] === 'ready';
-    this.elements.ppPredictor.style.display = showPpPredictor ? 'flex' : 'none';
   }
 
   private getHorizontalAlignment(layout: OverlayConfig['layout']): 'left' | 'center' | 'right' {
@@ -1067,14 +549,21 @@ export class OverlayDomService {
   }
 
   private getReferenceOverlayHeight(config: OverlayConfig): number {
-    if (this.elements.playingOverlay.classList.contains('active')) {
-      return this.elements.playingOverlay.offsetHeight;
+    const playingOverlay = document.getElementById('playing-overlay');
+    const menuOverlay = document.getElementById('menu-overlay');
+
+    if (!playingOverlay || !menuOverlay) {
+      return 0;
     }
 
-    if (this.elements.menuOverlay.classList.contains('active')) {
-      return this.elements.menuOverlay.offsetHeight * config.profileScale;
+    if (this.state.ui().playingActive) {
+      return playingOverlay.offsetHeight;
     }
 
-    return Math.max(this.elements.playingOverlay.offsetHeight, this.elements.menuOverlay.offsetHeight * config.profileScale);
+    if (this.state.ui().menuActive) {
+      return menuOverlay.offsetHeight * config.profileScale;
+    }
+
+    return Math.max(playingOverlay.offsetHeight, menuOverlay.offsetHeight * config.profileScale);
   }
 }

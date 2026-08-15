@@ -1,13 +1,22 @@
-<div id="app-container">
-  <app-beatleader-menu></app-beatleader-menu>
-  <app-playing-overlay></app-playing-overlay>
+<div
+  id="app-container"
+  [attr.data-theme]="ui().theme"
+  [style.display]="ui().appVisible ? 'flex' : 'none'"
+  [style.transform]="ui().appTransform"
+  [style.transform-origin]="ui().appTransformOrigin"
+  [style.top]="ui().appTop"
+  [style.bottom]="ui().appBottom"
+  [style.left]="ui().appLeft"
+  [style.right]="ui().appRight"
+  [style.align-items]="ui().appAlignItems"
+>
+  <app-overlay-theme-host></app-overlay-theme-host>
 </div>
 
 <app-settings-modal
-  [activeSettingsTab]="activeSettingsTab"
-  (save)="saveSettings()"
-  (restoreProxy)="restoreProxySettings()"
-  (settingsTabChange)="setSettingsTab($event)"
+  [config]="settings().config"
+  [visible]="settings().visible"
+  (save)="saveSettings($event)"
 ></app-settings-modal>
 
 <div id="debug">System init...</div>

@@ -1,136 +1,147 @@
-<div id="settings-modal">
-  <h2 data-i18n="sysSetup">SYSTEM SETUP [F2]</h2>
+<div id="settings-modal" [class.show]="visible">
+  <h2>{{ t('sysSetup') }}</h2>
 
   <div class="settings-tabs">
-    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'general'" (click)="setSettingsTab('general')" data-i18n="tabGeneral">General</button>
-    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'beatleader'" (click)="setSettingsTab('beatleader')" data-i18n="tabBeatLeader">BL/SS</button>
-    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'song'" (click)="setSettingsTab('song')" data-i18n="tabSongOverlay">Song Overlay</button>
+    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'general'" (click)="setSettingsTab('general')">{{ t('tabGeneral') }}</button>
+    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'beatleader'" (click)="setSettingsTab('beatleader')">{{ t('tabBeatLeader') }}</button>
+    <button type="button" class="settings-tab" [class.active]="activeSettingsTab === 'song'" (click)="setSettingsTab('song')">{{ t('tabSongOverlay') }}</button>
   </div>
 
   <div class="settings-tab-panel" [class.active]="activeSettingsTab === 'general'">
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="langLabel">Language / Язык</label>
+      <label style="font-size: 12px; color: #ccc;">{{ t('langLabel') }}</label>
       <div class="radio-grid">
-        <label class="radio-label"><input type="radio" name="lang" value="en"> English</label>
-        <label class="radio-label"><input type="radio" name="lang" value="ru"> Русский</label>
+        <label class="radio-label"><input type="radio" name="lang" value="en" [(ngModel)]="form.lang"> English</label>
+        <label class="radio-label"><input type="radio" name="lang" value="ru" [(ngModel)]="form.lang"> Русский</label>
       </div>
     </div>
 
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="themeLabel">Theme</label>
-      <select id="inp-theme">
+      <label style="font-size: 12px; color: #ccc;">{{ t('themeLabel') }}</label>
+      <select id="inp-theme" name="theme" [(ngModel)]="form.theme">
         <option value="cyberpunk">Cyberpunk</option>
         <option value="sunset">Sunset</option>
       </select>
     </div>
 
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="gameDataSourceLabel">Game Data Source</label>
-      <select id="inp-game-data-source">
-        <option value="bs-plus" data-i18n="gameDataSourceBsPlus">BS+ Song Overlay</option>
-        <option value="data-puller" data-i18n="gameDataSourceDataPuller">DataPuller</option>
+      <label style="font-size: 12px; color: #ccc;">{{ t('gameDataSourceLabel') }}</label>
+      <select id="inp-game-data-source" name="gameDataSource" [(ngModel)]="form.gameDataSource">
+        <option value="bs-plus">{{ t('gameDataSourceBsPlus') }}</option>
+        <option value="data-puller">{{ t('gameDataSourceDataPuller') }}</option>
       </select>
     </div>
+
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="customProxyLabel" data-i18n-title="proxyTooltip" title="Proxy prefixes are used when direct API requests are blocked by the browser.">Custom Proxy Prefix</label>
+      <label style="font-size: 12px; color: #ccc;" [title]="t('proxyTooltip')">{{ t('customProxyLabel') }}</label>
       <div class="proxy-input-row">
-        <input type="text" id="inp-custom-proxy" placeholder="https://my-proxy.example/?url=" data-i18n-title="proxyTooltip" title="Proxy prefixes are used when direct API requests are blocked by the browser.">
-        <button type="button" class="proxy-restore-btn" (click)="restoreProxySettings()" data-i18n="restoreProxyBtn">RESTORE</button>
+        <input
+          type="text"
+          id="inp-custom-proxy"
+          name="customProxy"
+          [(ngModel)]="form.customProxy"
+          [placeholder]="t('customProxyPlaceholder')"
+          [title]="t('proxyTooltip')"
+        >
+        <button type="button" class="proxy-restore-btn" (click)="restoreProxySettings()">{{ t('restoreProxyBtn') }}</button>
       </div>
-      <div class="setting-help" data-i18n="proxyHelp">Use commas to separate multiple proxy prefixes.</div>
+      <div class="setting-help">{{ t('proxyHelp') }}</div>
     </div>
+
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="modulesLabel">Display Modules</label>
+      <label style="font-size: 12px; color: #ccc;">{{ t('modulesLabel') }}</label>
       <div class="modules-grid modules-grid-single">
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-debug"> <span data-i18n="modDebug">Debug Msgs</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-debug" name="showDebugUI" [(ngModel)]="form.showDebugUI"> <span>{{ t('modDebug') }}</span></label>
       </div>
     </div>
+
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="layoutLabel">Layout</label>
+      <label style="font-size: 12px; color: #ccc;">{{ t('layoutLabel') }}</label>
       <div class="layout-picker">
         <div class="layout-picker-screen" aria-hidden="true">
           <div class="layout-center-mark"></div>
         </div>
         <div class="layout-grid">
           <label class="layout-option layout-top-left">
-            <input type="radio" name="layout" value="top-left">
+            <input type="radio" name="layout" value="top-left" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Top Left</span>
           </label>
           <label class="layout-option layout-top-center">
-            <input type="radio" name="layout" value="top-center">
+            <input type="radio" name="layout" value="top-center" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Top Center</span>
           </label>
           <label class="layout-option layout-top-right">
-            <input type="radio" name="layout" value="top-right">
+            <input type="radio" name="layout" value="top-right" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Top Right</span>
           </label>
           <label class="layout-option layout-middle-left">
-            <input type="radio" name="layout" value="middle-left">
+            <input type="radio" name="layout" value="middle-left" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Left</span>
           </label>
           <label class="layout-option layout-middle-right">
-            <input type="radio" name="layout" value="middle-right">
+            <input type="radio" name="layout" value="middle-right" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Right</span>
           </label>
           <label class="layout-option layout-bottom-left">
-            <input type="radio" name="layout" value="bottom-left">
+            <input type="radio" name="layout" value="bottom-left" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Bottom Left</span>
           </label>
           <label class="layout-option layout-bottom-center">
-            <input type="radio" name="layout" value="bottom-center">
+            <input type="radio" name="layout" value="bottom-center" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Bottom Center</span>
           </label>
           <label class="layout-option layout-bottom-right">
-            <input type="radio" name="layout" value="bottom-right">
+            <input type="radio" name="layout" value="bottom-right" [(ngModel)]="form.layout">
             <span class="layout-dot"></span>
             <span class="layout-tooltip">Bottom Right</span>
           </label>
         </div>
       </div>
     </div>
+
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="scaleLabel">Scale</label>
-      <input type="number" step="0.1" id="inp-scale">
+      <label style="font-size: 12px; color: #ccc;">{{ t('scaleLabel') }}</label>
+      <input type="number" step="0.1" id="inp-scale" name="scale" [(ngModel)]="form.scale">
     </div>
   </div>
 
   <div class="settings-tab-panel" [class.active]="activeSettingsTab === 'beatleader'">
     <div class="setting-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="profileScaleLabel">Profile Scale</label>
-      <input type="number" step="0.1" id="inp-profile-scale">
+      <label style="font-size: 12px; color: #ccc;">{{ t('profileScaleLabel') }}</label>
+      <input type="number" step="0.1" id="inp-profile-scale" name="profileScale" [(ngModel)]="form.profileScale">
     </div>
 
     <div class="setting-row">
       <label style="font-size: 12px; color: #ccc; margin-top: 5px;">Common</label>
       <div class="modules-grid modules-grid-single">
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-profile-always"> <span data-i18n="modProfileAlways">Always Show Profile</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-bl"> <span data-i18n="modBl">BeatLeader Menu</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-ss"> <span data-i18n="modSs">ScoreSaber Menu</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-glow-avatar"> <span data-i18n="modGlow">Neon Glow</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-bl-bg"> <span data-i18n="modBlBg">BeatLeader Background</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-profile-always" name="showProfileAlways" [(ngModel)]="form.showProfileAlways"> <span>{{ t('modProfileAlways') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-bl" name="showBL" [(ngModel)]="form.showBL"> <span>{{ t('modBl') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-ss" name="showSS" [(ngModel)]="form.showSS"> <span>{{ t('modSs') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-glow-avatar" name="glowAvatar" [(ngModel)]="form.glowAvatar"> <span>{{ t('modGlow') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-bl-bg" name="showBLBg" [(ngModel)]="form.showBLBg"> <span>{{ t('modBlBg') }}</span></label>
       </div>
     </div>
 
     <div class="setting-row rank-source-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="nameSourceLabel">Nickname Source</label>
-      <select id="inp-name-source">
-        <option value="beatleader" data-i18n="sourceBeatLeader">BeatLeader</option>
-        <option value="scoresaber" data-i18n="sourceScoreSaber">ScoreSaber</option>
+      <label style="font-size: 12px; color: #ccc;">{{ t('nameSourceLabel') }}</label>
+      <select id="inp-name-source" name="nameSource" [(ngModel)]="form.nameSource">
+        <option value="beatleader">{{ t('sourceBeatLeader') }}</option>
+        <option value="scoresaber">{{ t('sourceScoreSaber') }}</option>
       </select>
     </div>
 
     <div class="setting-row rank-source-row">
-      <label style="font-size: 12px; color: #ccc;" data-i18n="avatarSourceLabel">Avatar Source</label>
-      <select id="inp-avatar-source">
-        <option value="beatleader" data-i18n="sourceBeatLeader">BeatLeader</option>
-        <option value="scoresaber" data-i18n="sourceScoreSaber">ScoreSaber</option>
+      <label style="font-size: 12px; color: #ccc;">{{ t('avatarSourceLabel') }}</label>
+      <select id="inp-avatar-source" name="avatarSource" [(ngModel)]="form.avatarSource">
+        <option value="beatleader">{{ t('sourceBeatLeader') }}</option>
+        <option value="scoresaber">{{ t('sourceScoreSaber') }}</option>
       </select>
     </div>
 
@@ -141,51 +152,50 @@
 
     <div class="service-tab-panel" [class.active]="activeRankServiceTab === 'bl'">
       <div class="setting-row">
-        <label style="font-size: 12px; color: #ccc;" data-i18n="blLabel">BeatLeader ID / Nickname</label>
-        <input type="text" id="inp-bl">
+        <label style="font-size: 12px; color: #ccc;">{{ t('blLabel') }}</label>
+        <input type="text" id="inp-bl" name="blId" [(ngModel)]="form.blId" [placeholder]="t('blPlaceholder')">
       </div>
 
       <div class="setting-row">
-        <label style="font-size: 12px; color: #ccc;" data-i18n="profileRefreshStrategyLabel">Profile Refresh</label>
-        <select id="inp-bl-profile-refresh-strategy">
-          <option value="score" data-i18n="profileRefreshScoreOption">On score upload</option>
-          <option value="interval" data-i18n="profileRefreshIntervalOption">Periodically</option>
+        <label style="font-size: 12px; color: #ccc;">{{ t('profileRefreshStrategyLabel') }}</label>
+        <select id="inp-bl-profile-refresh-strategy" name="blProfileRefreshStrategy" [(ngModel)]="form.blProfileRefreshStrategy">
+          <option value="score">{{ t('profileRefreshScoreOption') }}</option>
+          <option value="interval">{{ t('profileRefreshIntervalOption') }}</option>
         </select>
       </div>
 
-      <div class="setting-row" id="bl-profile-refresh-minutes-row">
-        <label style="font-size: 12px; color: #ccc;" data-i18n="profileRefreshIntervalLabel">Refresh Interval, min</label>
-        <select id="inp-bl-profile-refresh-minutes">
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="15">15</option>
-          <option value="30">30</option>
+      <div class="setting-row" id="bl-profile-refresh-minutes-row" [style.display]="form.blProfileRefreshStrategy === 'interval' ? '' : 'none'">
+        <label style="font-size: 12px; color: #ccc;">{{ t('profileRefreshIntervalLabel') }}</label>
+        <select id="inp-bl-profile-refresh-minutes" name="blProfileRefreshMinutes" [(ngModel)]="form.blProfileRefreshMinutes">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="30">30</option>
         </select>
       </div>
 
       <div class="setting-row">
         <label style="font-size: 12px; color: #ccc; margin-top: 5px;">BeatLeader</label>
         <div class="modules-grid modules-grid-single">
-          <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-global"> <span data-i18n="modBlNextGlobal">Next Global</span></label>
-          <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-region"> <span data-i18n="modBlNextRegion">Next Region</span></label>
-          <!-- <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-friends"> <span data-i18n="modBlNextFriends">Next Following</span></label> -->
+          <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-global" name="showBLNextGlobal" [(ngModel)]="form.showBLNextGlobal"> <span>{{ t('modBlNextGlobal') }}</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="inp-show-bl-next-region" name="showBLNextRegion" [(ngModel)]="form.showBLNextRegion"> <span>{{ t('modBlNextRegion') }}</span></label>
         </div>
       </div>
     </div>
 
     <div class="service-tab-panel" [class.active]="activeRankServiceTab === 'ss'">
       <div class="setting-row">
-        <label style="font-size: 12px; color: #ccc;" data-i18n="ssLabel">ScoreSaber ID / Nickname</label>
-        <input type="text" id="inp-ss">
+        <label style="font-size: 12px; color: #ccc;">{{ t('ssLabel') }}</label>
+        <input type="text" id="inp-ss" name="ssId" [(ngModel)]="form.ssId" [placeholder]="t('ssPlaceholder')">
       </div>
 
       <div class="setting-row">
-        <label style="font-size: 12px; color: #ccc;" data-i18n="profileRefreshIntervalLabel">Refresh Interval, min</label>
-        <select id="inp-ss-profile-refresh-minutes">
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="15">15</option>
-          <option value="30">30</option>
+        <label style="font-size: 12px; color: #ccc;">{{ t('profileRefreshIntervalLabel') }}</label>
+        <select id="inp-ss-profile-refresh-minutes" name="ssProfileRefreshMinutes" [(ngModel)]="form.ssProfileRefreshMinutes">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="30">30</option>
         </select>
       </div>
     </div>
@@ -195,30 +205,30 @@
     <div class="setting-row">
       <label style="font-size: 12px; color: #ccc; margin-top: 5px;">BeatLeader / ScoreSaber</label>
       <div class="modules-grid">
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-map-ratings"> <span data-i18n="modMapRatings">BeatLeader Map Ratings</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-ss-stars"> <span data-i18n="modSsStars">ScoreSaber Stars</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-pp-predictor"> <span data-i18n="modPpPredictor">PP Predictor</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-map-ratings" name="showMapRatings" [(ngModel)]="form.showMapRatings"> <span>{{ t('modMapRatings') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-ss-stars" name="showSSStars" [(ngModel)]="form.showSSStars"> <span>{{ t('modSsStars') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-pp-predictor" name="showPpPredictor" [(ngModel)]="form.showPpPredictor"> <span>{{ t('modPpPredictor') }}</span></label>
       </div>
     </div>
 
     <div class="setting-row">
       <label style="font-size: 12px; color: #ccc; margin-top: 5px;">Song Overlay</label>
       <div class="modules-grid">
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-cover"> <span data-i18n="modCover">Track Cover</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-title"> <span data-i18n="modTitle">Track Title</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-artist"> <span data-i18n="modArtist">Artist / Mapper</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-meta"> <span data-i18n="modMeta">Difficulty & BPM</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-bsr"> <span data-i18n="modBsr">BSR & Date</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-progress"> <span data-i18n="modProg">Progress Bar</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-hp"> <span data-i18n="modHp">HP Bar</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-stats"> <span data-i18n="modStats">Miss / Combo</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-show-acc"> <span data-i18n="modAcc">Accuracy (Acc)</span></label>
-        <label class="checkbox-row"><input type="checkbox" id="inp-map-bg"> <span data-i18n="modMapBg">Map Card Background</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-cover" name="showCover" [(ngModel)]="form.showCover"> <span>{{ t('modCover') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-title" name="showTitle" [(ngModel)]="form.showTitle"> <span>{{ t('modTitle') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-artist" name="showArtist" [(ngModel)]="form.showArtist"> <span>{{ t('modArtist') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-meta" name="showMeta" [(ngModel)]="form.showMeta"> <span>{{ t('modMeta') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-bsr" name="showBsr" [(ngModel)]="form.showBsr"> <span>{{ t('modBsr') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-progress" name="showProgress" [(ngModel)]="form.showProgress"> <span>{{ t('modProg') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-hp" name="showHp" [(ngModel)]="form.showHp"> <span>{{ t('modHp') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-stats" name="showStats" [(ngModel)]="form.showStats"> <span>{{ t('modStats') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-show-acc" name="showAcc" [(ngModel)]="form.showAcc"> <span>{{ t('modAcc') }}</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="inp-map-bg" name="showMapBg" [(ngModel)]="form.showMapBg"> <span>{{ t('modMapBg') }}</span></label>
       </div>
     </div>
   </div>
 
   <div class="setting-row">
-    <button type="button" (click)="saveSettings()" data-i18n="applyBtn">APPLY</button>
+    <button type="button" (click)="saveSettings()">{{ t('applyBtn') }}</button>
   </div>
 </div>

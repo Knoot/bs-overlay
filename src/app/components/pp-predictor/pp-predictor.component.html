@@ -1,0 +1,18 @@
+<div id="pp-predictor" class="pp-predictor-row" [style.display]="ppPredictor().visible ? 'flex' : 'none'">
+  <span id="pp-predictor-bl-item" class="map-rating-item" [style.display]="ppPredictor().beatleader !== null ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+    @if (ppPredictor().beatleader !== null) {
+      <span id="pp-predictor-bl" [appAnimatedNumber]="ppPredictor().beatleader ?? 0" animatedNumberFormat="pp2"></span>
+    } @else {
+      <span id="pp-predictor-bl">-- pp</span>
+    }
+  </span>
+  <span id="pp-predictor-ss-item" class="map-rating-item" [style.display]="ppPredictor().scoresaber !== null ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+    @if (ppPredictor().scoresaber !== null) {
+      <span id="pp-predictor-ss" [appAnimatedNumber]="ppPredictor().scoresaber ?? 0" animatedNumberFormat="pp2"></span>
+    } @else {
+      <span id="pp-predictor-ss">-- pp</span>
+    }
+  </span>
+</div>

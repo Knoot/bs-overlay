@@ -1,0 +1,26 @@
+<div id="map-ratings" [style.display]="mapRatings().visible ? 'flex' : 'none'">
+  <div id="map-ratings-line" class="map-ratings-line" [style.display]="mapRatings().showBlBreakdown ? 'flex' : 'none'">
+    <span class="map-rating-item">
+      <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+      Tech: <span id="map-rating-tech">{{ formatMapRating(mapRatings().blTech) }}</span>
+    </span>
+    <span class="map-rating-item">
+      <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+      Acc: <span id="map-rating-acc">{{ formatMapRating(mapRatings().blAcc) }}</span>
+    </span>
+    <span class="map-rating-item">
+      <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+      Pass: <span id="map-rating-pass">{{ formatMapRating(mapRatings().blPass) }}</span>
+    </span>
+  </div>
+  <div id="map-ratings-total-row" class="map-ratings-total-row" [style.display]="mapRatings().showTotalRow ? 'flex' : 'none'">
+    <span class="map-rating-item" [style.display]="mapRatings().showBl ? 'inline-flex' : 'none'">
+      <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+      <span id="map-rating-stars">{{ formatMapRating(mapRatings().blStars) }}</span>
+    </span>
+    <span id="ss-map-stars-item" class="map-rating-item" [style.display]="mapRatings().showSs ? 'inline-flex' : 'none'">
+      <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+      <span id="ss-map-stars">{{ formatMapRating(mapRatings().ssStars) }}</span>
+    </span>
+  </div>
+</div>

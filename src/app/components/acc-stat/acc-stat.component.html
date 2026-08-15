@@ -1,0 +1,10 @@
+<div class="stat-item acc-large" [style.display]="ui().accDisplay">
+  <span class="label">Acc</span>
+  <span class="val" id="acc-num" [appAnimatedNumber]="score().accuracy" animatedNumberFormat="percent1"></span>
+  <span
+    class="val"
+    id="acc-grade"
+    [style.color]="score().gradeColor"
+    [style.text-shadow]="'0 0 10px ' + score().gradeColor + ', 1px 1px 3px #000'"
+  >{{ score().grade }}</span>
+</div>

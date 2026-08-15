@@ -1,4 +1,4 @@
-<div id="hp-bar-wrapper">
-  <div id="hp-bar-fill"></div>
-  <div id="hp-val">100%</div>
+<div id="hp-bar-wrapper" [style.display]="ui().hpDisplay">
+  <div id="hp-bar-fill" [style.width.%]="score().currentHealth * 100"></div>
+  <div id="hp-val" [appAnimatedNumber]="score().currentHealth" animatedNumberFormat="percent0"></div>
 </div>

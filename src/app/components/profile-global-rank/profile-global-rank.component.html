@@ -1,0 +1,11 @@
+<div class="rank-stat-row">
+  <span class="rank-stat-label">Global:</span>
+  <span id="rank-global-bl-item" class="rank-service-value" [style.display]="profile().beatleader.visible ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/beatleader.ico" alt="BeatLeader">
+    <span id="rank-global-bl">{{ profile().beatleader.globalRankText }}</span>
+  </span>
+  <span id="rank-global-ss-item" class="rank-service-value" [style.display]="profile().scoresaber.visible ? 'inline-flex' : 'none'">
+    <img class="service-icon" src="assets/services/scoresaber.ico" alt="ScoreSaber">
+    <span id="rank-global-ss">{{ profile().scoresaber.globalRankText }}</span>
+  </span>
+</div>
