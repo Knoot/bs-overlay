@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import {
   BeatleaderMapRatings,
   OverlayMapRatingsState,
@@ -150,6 +150,8 @@ const DEFAULT_SETTINGS_STATE: OverlaySettingsState = {
 
 @Injectable({ providedIn: 'root' })
 export class OverlayStateService {
+  private readonly zone = inject(NgZone);
+
   private readonly scoreState = signal<OverlayScoreState>({ ...DEFAULT_SCORE_STATE });
   private readonly progressState = signal<OverlayProgressState>({ ...DEFAULT_PROGRESS_STATE });
   private readonly ppPredictorState = signal<OverlayPpPredictorState>({ ...DEFAULT_PP_PREDICTOR_STATE });
@@ -179,169 +181,220 @@ export class OverlayStateService {
   }));
 
   resetScore(): void {
-    this.scoreState.set({ ...DEFAULT_SCORE_STATE });
+    this.updateInAngular(() => {
+      this.scoreState.set({ ...DEFAULT_SCORE_STATE });
+    });
   }
 
   patchScore(partial: Partial<OverlayScoreState>): void {
-    this.scoreState.update((current) => ({ ...current, ...partial }));
+    this.updateInAngular(() => {
+      this.scoreState.update((current) => ({ ...current, ...partial }));
+    });
   }
 
   resetProgress(): void {
-    this.progressState.set({ ...DEFAULT_PROGRESS_STATE });
+    this.updateInAngular(() => {
+      this.progressState.set({ ...DEFAULT_PROGRESS_STATE });
+    });
   }
 
   setProgress(currentTime: number, duration: number): void {
-    this.progressState.set({
-      currentTime: Math.max(0, Number(currentTime) || 0),
-      duration: Math.max(0, Number(duration) || 0)
+    this.updateInAngular(() => {
+      this.progressState.set({
+        currentTime: Math.max(0, Number(currentTime) || 0),
+        duration: Math.max(0, Number(duration) || 0)
+      });
     });
   }
 
   resetPpPredictor(): void {
-    this.ppPredictorState.set({ ...DEFAULT_PP_PREDICTOR_STATE });
+    this.updateInAngular(() => {
+      this.ppPredictorState.set({ ...DEFAULT_PP_PREDICTOR_STATE });
+    });
   }
 
   setPpPredictor(values: { beatleader: number | null; scoresaber: number | null }, enabled: boolean): void {
     const beatleader = this.toFiniteNumberOrNull(values.beatleader);
     const scoresaber = this.toFiniteNumberOrNull(values.scoresaber);
-    this.ppPredictorState.set({
-      visible: enabled && (beatleader !== null || scoresaber !== null),
-      beatleader,
-      scoresaber
+    this.updateInAngular(() => {
+      this.ppPredictorState.set({
+        visible: enabled && (beatleader !== null || scoresaber !== null),
+        beatleader,
+        scoresaber
+      });
     });
   }
 
   setPpPredictorEnabled(enabled: boolean): void {
-    this.ppPredictorState.update((current) => ({
-      ...current,
-      visible: enabled && (current.beatleader !== null || current.scoresaber !== null)
-    }));
+    this.updateInAngular(() => {
+      this.ppPredictorState.update((current) => ({
+        ...current,
+        visible: enabled && (current.beatleader !== null || current.scoresaber !== null)
+      }));
+    });
   }
 
   resetSong(waitingSong: string, coverSrc: string): void {
-    this.songState.set({
-      ...DEFAULT_SONG_STATE,
-      title: waitingSong,
-      coverSrc
+    this.updateInAngular(() => {
+      this.songState.set({
+        ...DEFAULT_SONG_STATE,
+        title: waitingSong,
+        coverSrc
+      });
     });
   }
 
   patchSong(partial: Partial<OverlaySongState>): void {
-    this.songState.update((current) => ({ ...current, ...partial }));
+    this.updateInAngular(() => {
+      this.songState.update((current) => ({ ...current, ...partial }));
+    });
   }
 
   setProfile(profile: OverlayProfileState): void {
-    this.profileState.set(profile);
+    this.updateInAngular(() => {
+      this.profileState.set(profile);
+    });
   }
 
   patchUi(partial: Partial<OverlayUiState>): void {
-    this.uiState.update((current) => ({ ...current, ...partial }));
+    this.updateInAngular(() => {
+      this.uiState.update((current) => ({ ...current, ...partial }));
+    });
   }
 
   setSettingsConfig(config: OverlayConfig): void {
-    this.settingsState.update((current) => ({
-      ...current,
-      config: { ...config }
-    }));
+    this.updateInAngular(() => {
+      this.settingsState.update((current) => ({
+        ...current,
+        config: { ...config }
+      }));
+    });
   }
 
   setSettingsVisible(visible: boolean): void {
-    this.settingsState.update((current) => ({ ...current, visible }));
+    this.updateInAngular(() => {
+      this.settingsState.update((current) => ({ ...current, visible }));
+    });
   }
 
   toggleSettingsVisible(): void {
-    this.settingsState.update((current) => ({ ...current, visible: !current.visible }));
+    this.updateInAngular(() => {
+      this.settingsState.update((current) => ({ ...current, visible: !current.visible }));
+    });
   }
 
   applyMapRatingSettings(settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) => this.resolveMapRatingsVisibility(current, settings));
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) => this.resolveMapRatingsVisibility(current, settings));
+    });
   }
 
   resetBeatleaderMapRatings(settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) =>
-      this.resolveMapRatingsVisibility(
-        {
-          ...current,
-          blState: 'empty',
-          blStars: null,
-          blTech: null,
-          blAcc: null,
-          blPass: null
-        },
-        settings
-      )
-    );
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) =>
+        this.resolveMapRatingsVisibility(
+          {
+            ...current,
+            blState: 'empty',
+            blStars: null,
+            blTech: null,
+            blAcc: null,
+            blPass: null
+          },
+          settings
+        )
+      );
+    });
   }
 
   setBeatleaderMapRatingsUnavailable(settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) =>
-      this.resolveMapRatingsVisibility(
-        {
-          ...current,
-          blState: 'missing',
-          blStars: null,
-          blTech: null,
-          blAcc: null,
-          blPass: null
-        },
-        settings
-      )
-    );
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) =>
+        this.resolveMapRatingsVisibility(
+          {
+            ...current,
+            blState: 'missing',
+            blStars: null,
+            blTech: null,
+            blAcc: null,
+            blPass: null
+          },
+          settings
+        )
+      );
+    });
   }
 
   setBeatleaderMapRatings(ratings: BeatleaderMapRatings, settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) =>
-      this.resolveMapRatingsVisibility(
-        {
-          ...current,
-          blState: 'ready',
-          blStars: this.toFiniteNumberOrNull(ratings.stars),
-          blTech: this.toFiniteNumberOrNull(ratings.tech),
-          blAcc: this.toFiniteNumberOrNull(ratings.acc),
-          blPass: this.toFiniteNumberOrNull(ratings.pass)
-        },
-        settings
-      )
-    );
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) =>
+        this.resolveMapRatingsVisibility(
+          {
+            ...current,
+            blState: 'ready',
+            blStars: this.toFiniteNumberOrNull(ratings.stars),
+            blTech: this.toFiniteNumberOrNull(ratings.tech),
+            blAcc: this.toFiniteNumberOrNull(ratings.acc),
+            blPass: this.toFiniteNumberOrNull(ratings.pass)
+          },
+          settings
+        )
+      );
+    });
   }
 
   resetScoreSaberStars(settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) =>
-      this.resolveMapRatingsVisibility(
-        {
-          ...current,
-          ssState: 'empty',
-          ssStars: null
-        },
-        settings
-      )
-    );
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) =>
+        this.resolveMapRatingsVisibility(
+          {
+            ...current,
+            ssState: 'empty',
+            ssStars: null
+          },
+          settings
+        )
+      );
+    });
   }
 
   setScoreSaberStarsUnavailable(settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) =>
-      this.resolveMapRatingsVisibility(
-        {
-          ...current,
-          ssState: 'missing',
-          ssStars: null
-        },
-        settings
-      )
-    );
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) =>
+        this.resolveMapRatingsVisibility(
+          {
+            ...current,
+            ssState: 'missing',
+            ssStars: null
+          },
+          settings
+        )
+      );
+    });
   }
 
   setScoreSaberStars(stars: number, settings: { showMapRatings: boolean; showSSStars: boolean }): void {
-    this.mapRatingsState.update((current) =>
-      this.resolveMapRatingsVisibility(
-        {
-          ...current,
-          ssState: 'ready',
-          ssStars: this.toFiniteNumberOrNull(stars)
-        },
-        settings
-      )
-    );
+    this.updateInAngular(() => {
+      this.mapRatingsState.update((current) =>
+        this.resolveMapRatingsVisibility(
+          {
+            ...current,
+            ssState: 'ready',
+            ssStars: this.toFiniteNumberOrNull(stars)
+          },
+          settings
+        )
+      );
+    });
+  }
+
+  private updateInAngular(action: () => void): void {
+    if (NgZone.isInAngularZone()) {
+      action();
+      return;
+    }
+
+    this.zone.run(action);
   }
 
   private toFiniteNumberOrNull(value: number | null | undefined): number | null {
