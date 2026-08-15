@@ -13,8 +13,10 @@ import { OverlayConfigService } from './overlay-config.service';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayDomService {
+  private static readonly NUMBER_ANIMATION_MS = 280;
   private els?: OverlayElements;
   private debugTimeout: number | null = null;
+  private readonly numberAnimations = new WeakMap<HTMLElement, number>();
   private blPlayer: PlayerCandidate | null = null;
   private blDetails: BeatleaderPlayerOverlayDetails = this.getEmptyBeatleaderDetails();
   private blStatusText = 'Loading...';
@@ -427,14 +429,14 @@ export class OverlayDomService {
     this.elements.cover.src = PLACEHOLDER_COVER;
     this.elements.progFill.style.width = '0%';
     this.elements.hpFill.style.width = '100%';
-    this.elements.hpVal.textContent = '100%';
-    this.elements.accNum.textContent = '0.0%';
+    this.setStaticText(this.elements.hpVal, '100%');
+    this.setStaticText(this.elements.accNum, '0.0%');
     this.elements.accGrade.textContent = 'E';
     this.elements.accGrade.style.color = '#e0e0e0';
     this.elements.accGrade.style.textShadow = '0 0 10px #e0e0e0, 1px 1px 3px #000';
-    this.elements.combo.textContent = '0';
+    this.setStaticText(this.elements.combo, '0');
     this.elements.missLabel.style.display = '';
-    this.elements.miss.textContent = '0';
+    this.setStaticText(this.elements.miss, '0');
     this.setDefaultTime();
     this.resetMapRatings();
     this.resetSSStars();
@@ -642,16 +644,18 @@ export class OverlayDomService {
 
   resetPpPredictor(): void {
     this.elements.ppPredictor.dataset['state'] = 'empty';
-    this.elements.ppPredictorBl.textContent = '-- pp';
-    this.elements.ppPredictorSs.textContent = '-- pp';
+    this.setStaticText(this.elements.ppPredictorBl, '-- pp');
+    this.setStaticText(this.elements.ppPredictorSs, '-- pp');
     this.elements.ppPredictorBlItem.style.display = 'none';
     this.elements.ppPredictorSsItem.style.display = 'none';
     this.updatePpPredictorVisibility(this.configService.getConfig());
   }
 
   renderPpPredictor(values: { beatleader: number | null; scoresaber: number | null }, config: OverlayConfig): void {
-    const hasBeatLeader = typeof values.beatleader === 'number' && Number.isFinite(values.beatleader);
-    const hasScoreSaber = typeof values.scoresaber === 'number' && Number.isFinite(values.scoresaber);
+    const beatLeaderValue = typeof values.beatleader === 'number' && Number.isFinite(values.beatleader) ? values.beatleader : null;
+    const scoreSaberValue = typeof values.scoresaber === 'number' && Number.isFinite(values.scoresaber) ? values.scoresaber : null;
+    const hasBeatLeader = beatLeaderValue !== null;
+    const hasScoreSaber = scoreSaberValue !== null;
 
     if (!hasBeatLeader && !hasScoreSaber) {
       this.resetPpPredictor();
@@ -659,39 +663,51 @@ export class OverlayDomService {
     }
 
     this.elements.ppPredictor.dataset['state'] = 'ready';
-    this.elements.ppPredictorBl.textContent = hasBeatLeader ? this.formatPredictedPpValue(values.beatleader) : '-- pp';
-    this.elements.ppPredictorSs.textContent = hasScoreSaber ? this.formatPredictedPpValue(values.scoresaber) : '-- pp';
+    if (beatLeaderValue !== null) {
+      this.animateNumber(this.elements.ppPredictorBl, beatLeaderValue, this.formatPredictedPpValue.bind(this));
+    } else {
+      this.setStaticText(this.elements.ppPredictorBl, '-- pp');
+    }
+
+    if (scoreSaberValue !== null) {
+      this.animateNumber(this.elements.ppPredictorSs, scoreSaberValue, this.formatPredictedPpValue.bind(this));
+    } else {
+      this.setStaticText(this.elements.ppPredictorSs, '-- pp');
+    }
+
     this.elements.ppPredictorBlItem.style.display = hasBeatLeader ? 'inline-flex' : 'none';
     this.elements.ppPredictorSsItem.style.display = hasScoreSaber ? 'inline-flex' : 'none';
     this.updatePpPredictorVisibility(config);
   }
 
   updateAccuracy(accuracy: number, grade: string, color: string): void {
-    this.elements.accNum.textContent = `${(accuracy * 100).toFixed(1)}%`;
+    this.animateNumber(this.elements.accNum, accuracy, (value) => `${(value * 100).toFixed(1)}%`);
     this.elements.accGrade.textContent = grade;
     this.elements.accGrade.style.color = color;
     this.elements.accGrade.style.textShadow = `0 0 10px ${color}, 1px 1px 3px #000`;
   }
 
   updateCombo(combo: number): void {
-    this.elements.combo.textContent = String(combo);
+    this.animateNumber(this.elements.combo, combo, (value) => String(Math.round(value)));
   }
 
   updateMiss(missCount: number): void {
     if (missCount === 0) {
       this.elements.missLabel.style.display = 'none';
+      this.cancelNumberAnimation(this.elements.miss);
+      this.elements.miss.removeAttribute('data-animated-value');
       this.elements.miss.innerHTML =
         '<span class="miss-fc-text">FC</span><span class="miss-fc-check" aria-hidden="true">✓</span>';
       return;
     }
 
     this.elements.missLabel.style.display = '';
-    this.elements.miss.textContent = String(missCount);
+    this.animateNumber(this.elements.miss, missCount, (value) => String(Math.round(value)));
   }
 
   updateHealth(currentHealth: number): void {
     const hpPct = Math.round(currentHealth * 100);
-    this.elements.hpVal.textContent = `${hpPct}%`;
+    this.animateNumber(this.elements.hpVal, hpPct, (value) => `${Math.round(value)}%`);
     this.elements.hpFill.style.width = `${hpPct}%`;
   }
 
@@ -729,17 +745,21 @@ export class OverlayDomService {
       hasSS,
       this.formatLocalValue(this.ssPlayer)
     );
-    this.setMetricItem(
+    this.setMetricNumberItem(
       this.elements.rankPpBlItem,
       this.elements.rankPpBl,
       hasBL,
-      this.formatPpValue(this.blPlayer?.pp)
+      this.blPlayer?.pp,
+      this.formatPpValue.bind(this),
+      '-- pp'
     );
-    this.setMetricItem(
+    this.setMetricNumberItem(
       this.elements.rankPpSsItem,
       this.elements.rankPpSs,
       hasSS,
-      this.formatPpValue(this.ssPlayer?.pp)
+      this.ssPlayer?.pp,
+      this.formatPpValue.bind(this),
+      '-- pp'
     );
 
     this.renderBeatLeaderNeighbor(this.elements.rankNextGlobal, this.blDetails.global);
@@ -814,6 +834,80 @@ export class OverlayDomService {
     value.textContent = text;
   }
 
+  private setMetricNumberItem(
+    item: HTMLElement,
+    valueElement: HTMLElement,
+    visible: boolean,
+    value: number | undefined,
+    formatter: (value: number) => string,
+    fallback: string
+  ): void {
+    item.style.display = visible ? 'inline-flex' : 'none';
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      this.animateNumber(valueElement, value, formatter);
+      return;
+    }
+
+    this.setStaticText(valueElement, fallback);
+  }
+
+  private animateNumber(element: HTMLElement, target: number, formatter: (value: number) => string): void {
+    const safeTarget = Number(target);
+
+    if (!Number.isFinite(safeTarget)) {
+      return;
+    }
+
+    const current = Number(element.dataset['animatedValue']);
+    const start = Number.isFinite(current) ? current : safeTarget;
+
+    this.cancelNumberAnimation(element);
+
+    if (Math.abs(start - safeTarget) < 0.0001) {
+      element.dataset['animatedValue'] = String(safeTarget);
+      element.textContent = formatter(safeTarget);
+      return;
+    }
+
+    const startedAt = performance.now();
+    const duration = OverlayDomService.NUMBER_ANIMATION_MS;
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = start + (safeTarget - start) * eased;
+
+      element.dataset['animatedValue'] = String(value);
+      element.textContent = formatter(value);
+
+      if (progress < 1) {
+        this.numberAnimations.set(element, requestAnimationFrame(tick));
+        return;
+      }
+
+      element.dataset['animatedValue'] = String(safeTarget);
+      this.numberAnimations.delete(element);
+    };
+
+    this.numberAnimations.set(element, requestAnimationFrame(tick));
+  }
+
+  private setStaticText(element: HTMLElement, text: string): void {
+    this.cancelNumberAnimation(element);
+    element.removeAttribute('data-animated-value');
+    element.textContent = text;
+  }
+
+  private cancelNumberAnimation(element: HTMLElement): void {
+    const animationId = this.numberAnimations.get(element);
+
+    if (animationId !== undefined) {
+      cancelAnimationFrame(animationId);
+      this.numberAnimations.delete(element);
+    }
+  }
+
   private formatRankValue(value: number | undefined, fallback: string): string {
     return typeof value === 'number' ? `#${value.toLocaleString()}` : fallback;
   }
@@ -822,11 +916,11 @@ export class OverlayDomService {
     return player?.countryRank ? `#${player.countryRank.toLocaleString()} (${player.country || 'N/A'})` : '#-- (N/A)';
   }
 
-  private formatPpValue(value: number | undefined): string {
+  private formatPpValue(value: number): string {
     return typeof value === 'number' ? `${Math.round(value).toLocaleString()} pp` : '-- pp';
   }
 
-  private formatPredictedPpValue(value: number | null): string {
+  private formatPredictedPpValue(value: number): string {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
       return '-- pp';
     }
