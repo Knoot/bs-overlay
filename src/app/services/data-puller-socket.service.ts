@@ -122,7 +122,7 @@ export class DataPullerSocketService implements GameDataService {
   }
 
   private handleMapData(data: DataPullerMapData, callbacks: SocketCallbacks): void {
-    const inLevel = Boolean(data.InLevel) && !data.LevelFinished && !data.LevelFailed && !data.LevelQuit;
+    const inLevel = Boolean(data.InLevel) && !data.LevelFinished && !data.LevelQuit;
     const paused = Boolean(data.LevelPaused);
 
     if (inLevel !== this.lastInLevel) {
