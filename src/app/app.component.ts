@@ -22,6 +22,7 @@ import { OverlayStateService } from './services/overlay-state.service';
     './overlay-theme.css',
     './components/themes/cyberpunk/cyberpunk-theme.css',
     './components/themes/sunset/sunset-theme.css',
+    './components/themes/minimal/minimal-theme.css',
     './overlay-base.css',
     './overlay-settings.css'
   ],

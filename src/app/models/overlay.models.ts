@@ -1,5 +1,5 @@
 export type Lang = 'en' | 'ru';
-export type Theme = 'cyberpunk' | 'sunset';
+export type Theme = 'cyberpunk' | 'sunset' | 'minimal';
 export type Layout =
   | 'top-left'
   | 'top-center'

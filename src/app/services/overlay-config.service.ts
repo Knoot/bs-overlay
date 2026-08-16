@@ -91,7 +91,7 @@ export class OverlayConfigService {
   }
 
   isTheme(value: string): value is Theme {
-    return value === 'cyberpunk' || value === 'sunset';
+    return value === 'cyberpunk' || value === 'sunset' || value === 'minimal';
   }
 
   isBeatleaderProfileRefreshStrategy(value: string): value is BeatleaderProfileRefreshStrategy {

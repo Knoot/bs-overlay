@@ -1,4 +1,6 @@
-@if (ui().theme === 'sunset') {
+@if (ui().theme === 'minimal') {
+  <app-minimal-overlay-layout></app-minimal-overlay-layout>
+} @else if (ui().theme === 'sunset') {
   <app-sunset-overlay-layout></app-sunset-overlay-layout>
 } @else {
   <app-cyberpunk-overlay-layout></app-cyberpunk-overlay-layout>

@@ -1,0 +1,53 @@
+<div
+  id="playing-overlay"
+  class="view-mode minimal-playing"
+  [class.active]="ui().playingActive"
+  [style.flex-direction]="ui().playingFlexDirection"
+  [style.top]="ui().playingTop"
+  [style.bottom]="ui().playingBottom"
+  [style.align-items]="ui().playingAlignItems"
+>
+  <div class="minimal-song-panel" id="top-glass-panel" [class.panel-no-bg]="ui().topPanelNoBackground">
+    <div class="minimal-left">
+      <div
+        class="minimal-difficulty"
+        id="difficulty"
+        [style.--diff-color]="song().diffColor"
+        [style.--diff-shadow]="song().diffShadow"
+        [innerHTML]="difficultyHtml()"
+      ></div>
+      <div class="minimal-title" id="title">{{ song().title }}</div>
+      <div class="minimal-stat-row">
+        <span class="minimal-stat">
+          <span class="minimal-label" id="miss-label">Miss</span>
+          <span class="minimal-value minimal-miss" id="miss-val" [appAnimatedNumber]="score().missCount" animatedNumberFormat="integer"></span>
+        </span>
+        <span class="minimal-stat">
+          <span class="minimal-label">Combo</span>
+          <span class="minimal-value minimal-combo" id="combo-val" [appAnimatedNumber]="score().combo" animatedNumberFormat="integer"></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="minimal-cover-stack" [style.display]="ui().coverDisplay">
+      <app-radial-progress-cover></app-radial-progress-cover>
+      <div id="bsr-line" class="minimal-bsr-line" [style.display]="ui().bsrDisplay">
+        <span id="key">{{ song().bsrText }}</span>
+        <span id="map-date">{{ song().mapDateText }}</span>
+      </div>
+    </div>
+
+    <div class="minimal-right">
+      <div class="minimal-bpm" id="bpm" [style.display]="ui().metaDisplay">{{ bpmText() }}</div>
+      <div class="minimal-artist" id="artist-mapper" [style.display]="ui().artistDisplay">{{ song().artist }}</div>
+      <div class="minimal-acc" [style.display]="ui().accDisplay">
+        <span id="acc-num" [appAnimatedNumber]="score().accuracy" animatedNumberFormat="percent1"></span>
+        <span
+          id="acc-grade"
+          [style.color]="score().gradeColor"
+          [style.text-shadow]="'0 0 14px ' + score().gradeColor + ', 0 0 4px rgba(0, 0, 0, 0.9)'"
+        >{{ score().grade }}</span>
+      </div>
+    </div>
+  </div>
+</div>

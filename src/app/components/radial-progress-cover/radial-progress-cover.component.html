@@ -1,0 +1,10 @@
+<div
+  class="radial-progress-cover"
+  [class.progress-hidden]="ui().statsRowDisplay === 'none'"
+  [style.--progress-deg]="progressDegrees() + 'deg'"
+>
+  <div id="cover-wrapper" class="radial-progress-cover-frame">
+    <img id="cover" [src]="song().coverSrc" alt="Map cover">
+  </div>
+  <div id="time-prog" class="radial-progress-cover-time">{{ timeText() }}</div>
+</div>
