@@ -30,7 +30,7 @@ export const DEFAULT_CONFIG: OverlayConfig = {
   resolvedBlQuery: '',
   resolvedSsId: '',
   resolvedSsQuery: '',
-  blProfileRefreshStrategy: 'score',
+  blProfileRefreshStrategy: 'interval',
   blProfileRefreshMinutes: 10,
   ssProfileRefreshMinutes: 10,
   showBL: true,
