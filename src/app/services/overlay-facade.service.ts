@@ -37,7 +37,7 @@ export class OverlayFacadeService {
   private progressRafId: number | null = null;
   private isFetchingBL = false;
   private pendingBeatleaderRefresh = false;
-  private pendingBeatleaderNextDetailsRefresh = false;
+  private pendingBeatleaderNextRanksRefresh = false;
   private isFetchingSS = false;
   private currentMapHash = '';
   private currentMapDifficulty = '';
@@ -120,7 +120,7 @@ export class OverlayFacadeService {
     const proxyChanged = this.config.customProxy !== previousConfig.customProxy;
     const beatLeaderProfileChanged =
       this.config.blId !== previousConfig.blId || this.config.showBL !== previousConfig.showBL || proxyChanged;
-    const beatLeaderNextDetailsMissing =
+    const beatLeaderNextRanksMissing =
       (!previousConfig.showBLNextGlobal && this.config.showBLNextGlobal && !this.dom.hasBeatleaderNextGlobal()) ||
       (!previousConfig.showBLNextRegion && this.config.showBLNextRegion && !this.dom.hasBeatleaderNextRegion());
     const beatLeaderRefreshChanged =
@@ -182,8 +182,8 @@ export class OverlayFacadeService {
 
     if (beatLeaderProfileChanged && this.shouldShowBeatLeaderMenu()) {
       this.requestBeatleaderRefresh('settings');
-    } else if (beatLeaderNextDetailsMissing && this.shouldShowBeatLeaderMenu()) {
-      this.requestBeatleaderNextDetailsRefresh('settings-next-ranks-missing');
+    } else if (beatLeaderNextRanksMissing && this.shouldShowBeatLeaderMenu()) {
+      this.requestBeatleaderNextRanksRefresh('settings-next-ranks');
     }
     if (scoreSaberProfileChanged && this.shouldShowScoreSaberMenu()) {
       void this.fetchSS();
@@ -666,19 +666,19 @@ export class OverlayFacadeService {
     void this.fetchBL(reason);
   }
 
-  private requestBeatleaderNextDetailsRefresh(reason: string): void {
+  private requestBeatleaderNextRanksRefresh(reason: string): void {
     if (!this.shouldShowBeatLeaderMenu()) {
-      this.debug.show(`BL next details refresh skipped: hidden (${reason})`, this.config.showDebugUI);
+      this.debug.show(`BL next ranks refresh skipped: hidden (${reason})`, this.config.showDebugUI);
       return;
     }
 
     if (this.isFetchingBL) {
-      this.pendingBeatleaderNextDetailsRefresh = true;
-      this.debug.show(`BL next details refresh queued: ${reason}`, this.config.showDebugUI);
+      this.pendingBeatleaderNextRanksRefresh = true;
+      this.debug.show(`BL next ranks refresh queued: ${reason}`, this.config.showDebugUI);
       return;
     }
 
-    void this.fetchBeatleaderNextDetails(reason);
+    void this.fetchBeatleaderNextRanks(reason);
   }
 
   private async fetchBL(reason = 'manual'): Promise<void> {
@@ -693,7 +693,6 @@ export class OverlayFacadeService {
       const result = await this.beatleader.fetchPlayer(this.config.blId, this.config.resolvedBlId, this.config.resolvedBlQuery, {
         includeGlobal: this.config.showBLNextGlobal,
         includeRegion: this.config.showBLNextRegion,
-        // `bl-next-friends` is temporarily disabled. // this.config.showBLNextFriends
         includeFriends: false
       });
 
@@ -727,7 +726,7 @@ export class OverlayFacadeService {
     }
   }
 
-  private async fetchBeatleaderNextDetails(reason: string): Promise<void> {
+  private async fetchBeatleaderNextRanks(reason: string): Promise<void> {
     const player = this.dom.getBeatleaderPlayer();
 
     if (!player) {
@@ -735,28 +734,20 @@ export class OverlayFacadeService {
       return;
     }
 
-    const includeGlobal = this.config.showBLNextGlobal && !this.dom.hasBeatleaderNextGlobal();
-    const includeRegion = this.config.showBLNextRegion && !this.dom.hasBeatleaderNextRegion();
-
-    if (!includeGlobal && !includeRegion) {
-      this.dom.applyModules(this.config);
-      return;
-    }
-
     this.isFetchingBL = true;
-    this.debug.show(`BL next details refresh started: ${reason}`, this.config.showDebugUI);
+    this.debug.show(`BL next ranks refresh started: ${reason}`, this.config.showDebugUI);
 
     try {
       const details = await this.beatleader.fetchPlayerDetails(player, {
-        includeGlobal,
-        includeRegion,
+        includeGlobal: this.config.showBLNextGlobal,
+        includeRegion: this.config.showBLNextRegion,
         includeFriends: false
       });
       this.dom.renderBLDetails(details, this.config);
       this.showBeatleaderDetailsDebug(details);
-      this.debug.show('BL next details loaded successfully', this.config.showDebugUI);
+      this.debug.show('BL next ranks loaded successfully', this.config.showDebugUI);
     } catch (error) {
-      this.debug.show(`BL next details error: ${this.describeError(error)}`, this.config.showDebugUI);
+      this.debug.show(`BL next ranks error: ${this.describeError(error)}`, this.config.showDebugUI);
     } finally {
       this.isFetchingBL = false;
       this.flushPendingBeatleaderRefresh();
@@ -766,15 +757,15 @@ export class OverlayFacadeService {
   private flushPendingBeatleaderRefresh(): void {
     if (this.pendingBeatleaderRefresh) {
       this.pendingBeatleaderRefresh = false;
-      this.pendingBeatleaderNextDetailsRefresh = false;
+      this.pendingBeatleaderNextRanksRefresh = false;
       window.setTimeout(() => this.requestBeatleaderRefresh('queued-score-event'), OverlayFacadeService.BEATLEADER_QUEUED_REFRESH_DELAY_MS);
       return;
     }
 
-    if (this.pendingBeatleaderNextDetailsRefresh) {
-      this.pendingBeatleaderNextDetailsRefresh = false;
+    if (this.pendingBeatleaderNextRanksRefresh) {
+      this.pendingBeatleaderNextRanksRefresh = false;
       window.setTimeout(
-        () => this.requestBeatleaderNextDetailsRefresh('queued-next-details'),
+        () => this.requestBeatleaderNextRanksRefresh('queued-next-ranks'),
         OverlayFacadeService.BEATLEADER_QUEUED_REFRESH_DELAY_MS
       );
     }

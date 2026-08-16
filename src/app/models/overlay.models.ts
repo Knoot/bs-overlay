@@ -104,13 +104,10 @@ export interface BeatleaderPlayersSearchResponse {
   data?: PlayerCandidate[];
 }
 
-export interface BeatleaderPaginatedPlayersResponse {
-  metadata?: {
-    itemsPerPage?: number;
-    page?: number;
-    total?: number;
-  };
-  data?: PlayerCandidate[];
+export interface BeatleaderMiniRankingsResponse {
+  global?: PlayerCandidate[] | null;
+  country?: PlayerCandidate[] | null;
+  friends?: PlayerCandidate[] | null;
 }
 
 export interface BeatsaverMapByHashResponse {

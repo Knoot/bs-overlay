@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import {
   BeatleaderMapRatings,
   BeatleaderFetchResult,
+  BeatleaderMiniRankingsResponse,
   BeatleaderNextPlayerInfo,
   BeatleaderNextPlayerState,
   BeatleaderOverlayRequestOptions,
-  BeatleaderPaginatedPlayersResponse,
   BeatleaderPlayerOverlayDetails,
   BeatleaderPlayerResponse,
   BeatleaderPlayersSearchResponse,
@@ -236,137 +236,91 @@ export class BeatleaderService {
     player: PlayerCandidate,
     requestOptions: BeatleaderOverlayRequestOptions
   ): Promise<BeatleaderPlayerOverlayDetails> {
-    const [global, region, friends] = await Promise.all([
-      requestOptions.includeGlobal ? this.fetchNextGlobalPlayer(player) : Promise.resolve(this.emptyNextPlayerState()),
-      requestOptions.includeRegion ? this.fetchNextRegionPlayer(player) : Promise.resolve(this.emptyNextPlayerState()),
-      // requestOptions.includeFriends ? this.fetchNextFriendsPlayer(player) : Promise.resolve(this.emptyNextPlayerState())
-      Promise.resolve(this.emptyNextPlayerState())
-    ]);
+    const shouldFetchMiniRankings =
+      requestOptions.includeGlobal ||
+      requestOptions.includeRegion;
 
-    return { global, region, friends };
-  }
-
-  private async fetchNextGlobalPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerState> {
-    if (!(typeof player.rank === 'number' && player.rank > 1)) {
-      return this.emptyNextPlayerState();
+    if (!shouldFetchMiniRankings) {
+      return this.emptyDetails();
     }
 
     try {
-      const response = await this.fetchPlayersPage({
-        sortBy: 'pp',
-        order: 'desc',
-        page: player.rank - 1,
-        count: 1
-      });
-      return this.toNextPlayerState(response.data[0], player);
+      const rankings = await this.fetchMiniRankings(player);
+      return {
+        global: this.toNextPlayerState(rankings.global, player),
+        region: this.toNextPlayerState(rankings.country, player),
+        friends: this.emptyNextPlayerState()
+      };
     } catch {
-      return this.failedNextPlayerState();
+      return {
+        global: requestOptions.includeGlobal ? this.failedNextPlayerState() : this.emptyNextPlayerState(),
+        region: requestOptions.includeRegion ? this.failedNextPlayerState() : this.emptyNextPlayerState(),
+        friends: this.emptyNextPlayerState()
+      };
     }
   }
 
-  private async fetchNextRegionPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerState> {
-    if (!(typeof player.countryRank === 'number' && player.countryRank > 1 && player.country)) {
-      return this.emptyNextPlayerState();
+  private async fetchMiniRankings(player: PlayerCandidate): Promise<BeatleaderMiniRankingsResponse> {
+    if (!(typeof player.rank === 'number' && player.rank > 0)) {
+      return {};
     }
 
-    try {
-      const response = await this.fetchPlayersPage({
-        sortBy: 'pp',
-        order: 'desc',
-        page: player.countryRank - 1,
-        count: 1,
-        countries: player.country
-      });
-      return this.toNextPlayerState(response.data[0], player);
-    } catch {
-      return this.failedNextPlayerState();
-    }
-  }
-
-  // private async fetchNextFriendsPlayer(player: PlayerCandidate): Promise<BeatleaderNextPlayerInfo | null> {
-  //   const playerId = String(player.id || '');
-  //   const playerPp = typeof player.pp === 'number' ? player.pp : null;
-  //
-  //   if (!playerId || playerPp === null) {
-  //     return null;
-  //   }
-  //
-  //   const pageSize = 50;
-  //   const maxPages = 4;
-  //   let bestCandidate: PlayerCandidate | null = null;
-  //
-  //   try {
-  //     for (let page = 1; page <= maxPages; page++) {
-  //       const followers = await this.fetchFollowersPage(playerId, page, pageSize);
-  //       if (followers.length === 0) {
-  //         break;
-  //       }
-  //
-  //       const profiles = await Promise.all(
-  //         followers.map((candidate) => this.fetchPlayerProfileById(String(candidate.id || '')).catch(() => null))
-  //       );
-  //
-  //       for (const profile of profiles) {
-  //         if (!profile?.name || typeof profile.pp !== 'number' || profile.pp <= playerPp) {
-  //           continue;
-  //         }
-  //
-  //         if (!bestCandidate || (bestCandidate.pp ?? Number.POSITIVE_INFINITY) > profile.pp) {
-  //           bestCandidate = profile;
-  //         }
-  //       }
-  //
-  //       if (followers.length < pageSize) {
-  //         break;
-  //       }
-  //     }
-  //
-  //     if (bestCandidate) {
-  //       return this.toNextPlayerInfo(bestCandidate, player);
-  //     }
-  //   } catch {
-  //     return null;
-  //   }
-  //
-  //   return null;
-  // }
-  //
-  // private async fetchFollowersPage(playerId: string, page: number, count: number): Promise<PlayerCandidate[]> {
-  //   const json = await this.fetchJSONWithProxyFallback(
-  //     `https://api.beatleader.com/player/${playerId}/followers?page=${page}&count=${count}&type=following`
-  //   );
-  //   return this.extractFollowerListResponse(json);
-  // }
-  //
-  // private async fetchPlayerProfileById(playerId: string): Promise<PlayerCandidate | null> {
-  //   if (!playerId) {
-  //     return null;
-  //   }
-  //
-  //   const json = await this.fetchJSONWithProxyFallback(`https://api.beatleader.com/player/${playerId}?stats=true`);
-  //   return this.extractSinglePlayerResponse(json);
-  // }
-
-  private async fetchPlayersPage(
-    params: Record<string, string | number | boolean | undefined>,
-    options?: { allowProxyFallback?: boolean; credentials?: RequestCredentials }
-  ): Promise<{ data: PlayerCandidate[]; total?: number }> {
     const query = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === '') {
-        return;
+    query.set('rank', String(player.rank));
+    query.set('leaderboardContext', 'general');
+    query.set('friends', 'false');
+
+    if (player.country) {
+      query.set('country', player.country);
+    }
+
+    if (typeof player.countryRank === 'number' && player.countryRank > 0) {
+      query.set('countryRank', String(player.countryRank));
+    }
+
+    const json = await this.fetchJSONWithProxyFallback(`https://api.beatleader.com/minirankings?${query.toString()}`);
+    return this.extractMiniRankingsResponse(json);
+  }
+
+  private toNextPlayerState(
+    candidates: PlayerCandidate[] | null | undefined,
+    currentPlayer: PlayerCandidate
+  ): BeatleaderNextPlayerState {
+    const value = this.toNextPlayerInfo(this.findClosestHigherPpPlayer(candidates, currentPlayer), currentPlayer);
+    return value ? { status: 'ready', value } : this.emptyNextPlayerState();
+  }
+
+  private findClosestHigherPpPlayer(
+    candidates: PlayerCandidate[] | null | undefined,
+    currentPlayer: PlayerCandidate
+  ): PlayerCandidate | null {
+    const currentPp = typeof currentPlayer.pp === 'number' ? currentPlayer.pp : null;
+    const currentId = String(currentPlayer.id ?? '');
+    let closest: PlayerCandidate | null = null;
+
+    if (!Array.isArray(candidates)) {
+      return null;
+    }
+
+    for (const candidate of candidates) {
+      if (!candidate?.name || typeof candidate.pp !== 'number') {
+        continue;
       }
 
-      query.set(key, String(value));
-    });
+      if (currentId && String(candidate.id ?? '') === currentId) {
+        continue;
+      }
 
-    const json = await this.fetchJSONWithProxyFallback(`https://api.beatleader.com/players?${query.toString()}`, options);
-    return this.extractPlayersPageResponse(json);
-  }
+      if (currentPp !== null && candidate.pp <= currentPp) {
+        continue;
+      }
 
-  private toNextPlayerState(candidate: PlayerCandidate | null | undefined, currentPlayer: PlayerCandidate): BeatleaderNextPlayerState {
-    const value = this.toNextPlayerInfo(candidate, currentPlayer);
-    return value ? { status: 'ready', value } : this.emptyNextPlayerState();
+      if (!closest || (closest.pp ?? Number.POSITIVE_INFINITY) > candidate.pp) {
+        closest = candidate;
+      }
+    }
+
+    return closest;
   }
 
   private toNextPlayerInfo(candidate: PlayerCandidate | null | undefined, currentPlayer: PlayerCandidate): BeatleaderNextPlayerInfo | null {
@@ -468,25 +422,23 @@ export class BeatleaderService {
       .filter((item): item is PlayerCandidate => item !== null);
   }
 
-  private extractPlayersPageResponse(value: unknown): { data: PlayerCandidate[]; total?: number } {
-    if (!this.isBeatleaderPaginatedPlayersResponse(value) || !Array.isArray(value.data)) {
-      return { data: [] };
+  private extractMiniRankingsResponse(value: unknown): BeatleaderMiniRankingsResponse {
+    if (!this.isBeatleaderMiniRankingsResponse(value)) {
+      return {};
     }
 
-    const total =
-      this.isJsonObject(value.metadata) && typeof value.metadata['total'] === 'number'
-        ? value.metadata['total']
-        : undefined;
-
     return {
-      data: value.data
-        .map((item) => this.toPlayerCandidate(item))
-        .filter((item): item is PlayerCandidate => item !== null),
-      total
+      global: this.extractMiniRankingList(value.global),
+      country: this.extractMiniRankingList(value.country),
+      friends: null
     };
   }
 
-  private extractFollowerListResponse(value: unknown): PlayerCandidate[] {
+  private extractMiniRankingList(value: PlayerCandidate[] | null | undefined): PlayerCandidate[] | null {
+    if (value === null) {
+      return null;
+    }
+
     if (!Array.isArray(value)) {
       return [];
     }
@@ -522,7 +474,7 @@ export class BeatleaderService {
     return this.isJsonObject(value);
   }
 
-  private isBeatleaderPaginatedPlayersResponse(value: unknown): value is BeatleaderPaginatedPlayersResponse {
+  private isBeatleaderMiniRankingsResponse(value: unknown): value is BeatleaderMiniRankingsResponse {
     return this.isJsonObject(value);
   }
 
