@@ -1,0 +1,24 @@
+@mixin css-vars($values) {
+  @each $name, $value in $values {
+    --#{$name}: #{$value};
+  }
+}
+
+@mixin absolute-fill {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

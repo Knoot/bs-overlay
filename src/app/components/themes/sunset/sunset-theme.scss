@@ -1,0 +1,22 @@
+@use '../../../styles/mixins' as *;
+
+$sunset-theme: (
+  neon-cyan: #ffcf66,
+  neon-magenta: #ff6b8a,
+  neon-lime: #9cff8a,
+  neon-red: #ff7849,
+  neon-gold: #ffe18a,
+  bg-glass: rgba(28, 12, 18, 0.72),
+  border-glow: 0 0 16px rgba(255, 166, 102, 0.28),
+  panel-border: rgba(255, 206, 132, 0.16),
+  title-gradient: linear-gradient(45deg, #ffd59a, #fff2da),
+  title-glow: rgba(255, 184, 107, 0.35),
+  progress-gradient: linear-gradient(90deg, #ff7a59, #ffd166),
+  hp-gradient: linear-gradient(90deg, #8e2f3a, #ff7a59),
+  settings-bg: rgba(24, 10, 16, 0.96),
+  settings-shadow: 0 0 30px rgba(255, 158, 112, 0.24)
+);
+
+:root[data-theme="sunset"] {
+  @include css-vars($sunset-theme);
+}

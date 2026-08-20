@@ -18,13 +18,13 @@ import { OverlayStateService } from './services/overlay-state.service';
   imports: [CommonModule, OverlayThemeHostComponent, SettingsModalComponent],
   templateUrl: './app.component.html',
   styleUrls: [
-    './app.component.css',
-    './overlay-theme.css',
-    './components/themes/cyberpunk/cyberpunk-theme.css',
-    './components/themes/sunset/sunset-theme.css',
-    './components/themes/minimal/minimal-theme.css',
-    './overlay-base.css',
-    './overlay-settings.css'
+    './app.component.scss',
+    './overlay-theme.scss',
+    './components/themes/cyberpunk/cyberpunk-theme.scss',
+    './components/themes/sunset/sunset-theme.scss',
+    './components/themes/minimal/minimal-theme.scss',
+    './overlay-base.scss',
+    './overlay-settings.scss'
   ],
   encapsulation: ViewEncapsulation.None
 })
