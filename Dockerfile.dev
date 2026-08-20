@@ -1,5 +1,12 @@
 FROM node:20-alpine
 
-WORKDIR /workspace
+WORKDIR /app
 
-CMD ["sh", "-c", "if [ ! -d node_modules/@angular ]; then npm ci || npm install; fi && npm run watch -- --poll 1000"]
+COPY package*.json ./
+RUN npm ci || npm install
+
+COPY . ./
+
+EXPOSE 4200
+
+CMD ["npm", "start", "--", "--host", "0.0.0.0", "--poll", "1000"]
